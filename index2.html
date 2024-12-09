@@ -1,0 +1,1709 @@
+<!-- For help on using this template, see the blog post: https://blog.mturk.com/editing-the-survey-link-project-template-in-the-ui-7c75285105fb#.py7towsdx --><!-- HIT template: SurveyLink-v3.0 --><!-- The following snippet enables the 'responsive' behavior on smaller screens -->
+<meta content="width=device-width,initial-scale=1" name="viewport" />
+<section class="container" id="SurveyLink">
+
+<script src="https://www.gstatic.com/firebasejs/7.23.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.23.0/firebase-database.js"></script>
+
+
+<script language="Javascript">
+
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  
+
+  // Initialize Firebase
+	var firebaseConfig = {
+    apiKey: "AIzaSyB9YPwt1mF2m6qG-UXiEGCo_F7iDKaEhO4",
+    authDomain: "muse-c41fd.firebaseapp.com",
+    databaseURL: "https://muse-c41fd-default-rtdb.firebaseio.com",
+    projectId: "muse-c41fd",
+    storageBucket: "muse-c41fd.appspot.com",
+    messagingSenderId: "313728899350",
+    appId: "1:313728899350:web:f309d4b02c049bac4c5837"
+  };
+  firebase.initializeApp(firebaseConfig);
+  var database = firebase.database();
+  
+  
+    
+  // Initialize Firebase
+  
+  
+  // Usage example
+document.body.scrollTop = 0;
+document.documentElement.scrollTop = 0;
+var condition_num_to_type = {'cond_1': 'purp_only.html', 'cond_2': 'purp_mech.html', 'cond_3': 'purp_mech_gpt.html'}
+var number_to_cond = {1: 'cond_1', 2: 'cond_2', 3: 'cond_3', 4: 'cond_4'}
+var new_to_old_cond_mapping = {'graph_1': 'cond_1', 'graph_2': 'cond_2', 'graph_3': 'cond_3', 'graph_4': 'cond_4'}
+
+var stepsNames= ['pre','instructions','random'];
+var problems_mapping = {'problem1': 'Dry wet floor','problem2': 'Folding laundry'}
+
+var possible_problems = ['problem1', 'problem2'] // TODO here we need to add the problem that we want in the first part of the experiment
+var possible_versions = ['v_1','v_2','v_3','v_4']
+
+var versions_mapping = {'v_1': ['graph_1'],
+						'v_2': ['graph_2'],
+						'v_3': ['graph_3'],
+						'v_4': ['graph_4']}
+		
+
+ function get_from_database() {
+  return new Promise(function(resolve, reject) {
+    var ref = database.ref();
+    ref.once("value", function(snapshot) {
+      var data = snapshot.val();
+      var mappy = "problem1: " + data.problem1.cond1 + " " + 
+	  data.problem1.cond2 + " " + data.problem1.cond3 + " " + 
+	  data.problem1.cond4 + " ";
+	  mappy += "problem2: " + data.problem2.cond1 + " " + 
+	  data.problem2.cond2 + " " + data.problem2.cond3 + " " + 
+	  data.problem2.cond4;
+	  resolve(mappy);
+    });
+  });
+}
+  async function fetchData() {
+  try {
+    var result = await get_from_database();
+    var a = result;
+    return a; // Now a's value is known in the outer scope
+  } catch (error) {
+    console.log(error);
+  }
+}
+  var condition_threshold = 50;
+  function get_possible_conditions_and_problems() {
+  return new Promise(function(resolve, reject) {
+    var problem_map = new Map();
+    var all_possible_problems = [];
+    var problem_arr = [];
+
+    fetchData()
+      .then(function(result) {
+        var problemSections = result.split(" ");
+        var mapping = {};
+        var problemName = problemSections[0].replace(":", "");
+        mapping[problemName] = [
+          problemSections[1],
+          problemSections[2],
+          problemSections[3],
+          problemSections[4]
+        ];
+        var problemName2 = problemSections[5].replace(":", "");
+        mapping[problemName2] = [
+          problemSections[6],
+          problemSections[7],
+          problemSections[8],
+          problemSections[9]
+        ];
+        var was_problem1_found = 0;
+        var was_problem2_found = 0;
+        var problem1_arr = [];
+        var problem2_arr = [];
+
+        for (let i = 0; i < 4; i++) {
+          if (mapping["problem1"][i] < condition_threshold) {
+            if (was_problem1_found == 0) {
+              was_problem1_found = 1;
+              all_possible_problems.push("problem1");
+            }
+            problem1_arr.push(i + 1);
+          }
+          if (mapping["problem2"][i] < condition_threshold) {
+            if (was_problem2_found == 0) {
+              was_problem2_found = 1;
+              all_possible_problems.push("problem2");
+            }
+            problem2_arr.push(i + 1);
+          }
+        }
+
+        if (problem1_arr.length > 0) {
+          problem_map["problem1"] = problem1_arr;
+        }
+        if (problem2_arr.length > 0) {
+          problem_map["problem2"] = problem2_arr;
+        }
+
+        resolve([all_possible_problems, problem_map]);
+      })
+      .catch(function(error) {
+        reject(error);
+      });
+  });
+}
+
+async function sample_condition_problem(){
+		let values = await get_possible_conditions_and_problems();
+		var all_possible_problems = values[0]
+		var problem_map = values[1]
+		var random_number_problem = Math.floor(Math.random() * all_possible_problems.length)
+		chosen_problem = all_possible_problems[random_number_problem]
+		var random_number_condition_version = Math.floor(Math.random() * problem_map[chosen_problem].length);
+
+		var chosen_cond_number = problem_map[chosen_problem][random_number_condition_version];
+		
+		chosen_condition = number_to_cond[chosen_cond_number];
+		
+		alert(chosen_condition);
+		alert(chosen_problem);
+		writeToLogger("Chosen problem: " + chosen_problem + '\n');
+
+		writeToLogger("Chosen condition: " + chosen_condition + '\n');
+		return [chosen_condition, problems_mapping[chosen_problem]];
+		
+		
+
+		//document.getElementById("task_chosen_problem").innerHTML = chosen_problem;
+		// curr_graph_url_problem = chosen_problem.replace(" ", "%20");
+
+		// log beginning time
+		// logCurrentTime("first instructions section") ?
+}
+
+
+
+//var list = get_possible_conditions_and_problems();
+//alert(list[0]);
+//alert(list[1]);
+let chosen_problem;
+var phaseName;
+var chosen_version;
+let chosen_condition;
+let chosen_order;
+var step=0;   // steps throughout a phase
+var phase=1; // three phases, corresponding to conditions
+var section = 0;
+var mtimer;
+async function main(){
+	var result = await sample_condition_problem();
+	chosen_condition = result[0];
+	chosen_problem = result[1];
+}
+
+main();
+
+
+const numOfSecondsSelfPart = 80; // 120
+const numOfSecondsInspirationPart = 30; //480 todo - change this to see
+
+var totalSecondsSelfAnswer = 80; // 120
+var totalSecondsWithInspiration = 30; //480 todo - change this to see effect on times, table snapshot
+// var curr_graph_url_problem;
+
+	function showInspirationBlankLinesAccordingToPhase(cond){
+		document.getElementById("self_solutions_section1").style.display ="none";
+		document.getElementById("inspiration_solutions_section1").style.display ="none";
+		document.getElementById("inspiration_box_section_1").style.display ="none";
+		if (cond==="cond_4"){
+			showEmptyConditionBlankLines()
+		}
+		else {
+			let section_number = section+1
+			logCurrentTime("section " + section_number.toString() + " part 2 - answers")
+			document.getElementById("inspiration_solutions_section" + section_number.toString()).style.display ="block";
+			document.getElementById("inspiration_box_section_" + section_number.toString()).style.display ="block";
+		}
+	}
+
+	function showEmptyConditionBlankLines(){
+		    document.getElementById("self_solutions_section1").style.display ="block";
+			let section_number = section+1
+			logCurrentTime("section " + section_number.toString() + " part 2 - answers")
+	}
+
+		function moveToInspirationSection(){
+		// go to the top of the page
+		document.body.scrollTop = 0;
+		document.documentElement.scrollTop = 0;
+
+		// show the inspirations section
+		document.getElementById("inspiration_based_solutions_instructions").style.display ="block"
+
+		// hide all non relevant sections
+		document.getElementById("cond_2").style.display ="none"
+		document.getElementById("cond_3").style.display ="none"
+		document.getElementById("cond_1").style.display ="none"
+		document.getElementById("cond_4").style.display ="none"
+		alert(chosen_condition);
+		// show the correct section
+		document.getElementById(chosen_condition).style.display ="block"
+		console.log(chosen_condition)
+		if (chosen_condition === "cond_3") {
+			logCurrentTime("section " + (section+1).toString() + " part 2 - cond_3 setting")
+			console.log("cond_3_" + section.toString())
+			let cond_element = document.getElementById("cond_3_" + (section+1).toString())
+			cond_element.style.display = "block"
+			cond_element.lastChild.attributes.src.value = "./graph_files/" + chosen_problem + "/" + condition_num_to_type["cond_3"]
+			document.getElementById("inspiration_box_" + (section+1).toString() + "_text_line").style.display = "block"
+		}
+		if (chosen_condition === "cond_2"){
+			logCurrentTime("section " + (section+1).toString() + " part 2 - cond_2 setting")
+			console.log("cond_2_" + (section+1).toString())
+			let cond_element = document.getElementById("cond_2_" + (section+1).toString())
+			cond_element.style.display = "block"
+			cond_element.lastChild.attributes.src.value = "./graph_files/" + chosen_problem + "/" + condition_num_to_type["cond_2"]
+			document.getElementById("inspiration_box_" + (section+1).toString() + "_links_line").style.display = "block"
+		}
+		if (chosen_condition === "cond_1"){
+			logCurrentTime("section " + (section+1).toString() + " part 2 - cond_1 setting")
+			document.getElementById("inspiration_box_" + (section+1).toString() + "_graph_line").style.display = "block"
+			let cond_element = document.getElementById("cond_1_" + (section+1).toString())
+			cond_element.style.display = "block"
+			cond_element.lastChild.attributes.src.value = "./graph_files/" + chosen_problem + "/" + condition_num_to_type["cond_1"]
+		}
+		if (chosen_condition === "cond_4"){
+			logCurrentTime("section " + (section+1).toString() + " part 2 - cond_4 setting")
+		}
+	}
+
+
+window.onload = function() {document.getElementById('submitButton'); }
+
+	function logCurrentTime(section_name){
+			let today = new Date();
+			let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+			let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+			let dateTime = date + ' ' + time;
+			writeToLogger("Entering " + section_name + " time: " + dateTime)
+	}
+	
+		function logCurrentTableTime(time_in_seconds){
+			//let today = new Date();
+			//let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+			//let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+			//let dateTime = date + ' ' + time;
+			//getting the inforformation from the table entries
+			alert(chosen_condition);
+			let str = "";
+			for (let i=0; i < 10; i++){ //going over all 10 table rows
+				let str_idx = (i+1).toString()
+				str += "entry number " + str_idx;
+				
+				if (chosen_condition == "cond_4")
+				{
+					str += ": solution" + str_idx + ": " + document.getElementById('self_solution_1_'+str_idx).value
+				str += ": explanation" + str_idx + ": " + document.getElementById('self_inspiration_explain_1_'+str_idx).value
+				str += "\n"
+				}
+				else{
+				str += ": solution" + str_idx + ": " + document.getElementById('inspiration_solution_1_'+str_idx).value
+				str += ": explanation" + str_idx + ": " + document.getElementById('inspiration_explain_1_'+str_idx).value
+				str += ": source" + str_idx + ": " + document.getElementById('inspiration_source_1_'+str_idx).value
+				str += "\n"
+				
+				}
+			
+			}
+			//add the "more" section
+			
+			if (chosen_condition == "cond_4"){
+			str += "more entry: "
+			str += "solution more: " + document.getElementById('more_self_solutions_1').value
+				str += "explanation more: " + document.getElementById('more_self_inspiration_explain_1').value
+
+				str += "\n"
+			}
+			else {
+			str += "solution more: " + document.getElementById('more_inspiration_solutions_1').value
+				str += "explanation more: " + document.getElementById('more_inspiration_explain_1').value
+				str += "inspiration more: " + document.getElementById('more_inspiration_source_1').value
+				str += "\n"
+				
+			}
+			writeToTableLogger("table state after " + time_in_seconds + " seconds: " + str + "---$$$---");
+
+			
+
+	}
+
+
+
+	function endOfSurveyubmit(){
+	//alert("called the function");
+	var all_fine = 0;
+	alert(chosen_condition);
+	if (chosen_condition != "cond_4")
+	{
+		if (!(document.getElementById('helpful_no').checked || document.getElementById('helpful_yes').checked)) {
+			//alert("helpfulq");
+			all_fine = 1;
+		}
+		if (!(document.getElementById('useagain_no').checked || document.getElementById('useagain_yes').checked)) {
+			//alert("useagainq");
+			all_fine = 1;
+		}
+		let a = document.getElementById('hardq_veryeasy').checked;
+		let b = document.getElementById('hardq_fairlyeasy').checked;
+		let c = document.getElementById('hardq_moderate').checked;
+		let d = document.getElementById('hardq_fairlyhard').checked;
+		let e = document.getElementById('hardq_veryhard').checked;
+		
+		if (!(a||b||c||d||e))
+		{
+			//alert("hardq");
+			all_fine = 1;
+		}
+		a = document.getElementById('timeq_lotless').checked;
+		b = document.getElementById('timeq_lotmore').checked;
+		c = document.getElementById('timeq_perfect').checked;
+		d = document.getElementById('timeq_bitless').checked;
+		e = document.getElementById('timeq_bitmore').checked;
+		
+		if (!(a||b||c||d||e))
+		{	//alert("timeq");
+			all_fine = 1;
+		}
+		
+		a = document.getElementById('famil_veryfamiliar').checked;
+		b = document.getElementById('famil_notatallfamil').checked;
+		c = document.getElementById('famil_neutral').checked;
+		d = document.getElementById('famil_notsofamil').checked;
+		e = document.getElementById('famil_somewhatfamil').checked;
+		if (!(a||b||c||d||e))
+		{
+			//alert ("familq");
+			all_fine = 1;
+		}
+	}
+	else{
+		let a = document.getElementById('famil_veryfamiliar_c4').checked;
+		let b = document.getElementById('famil_notatallfamil_c4').checked;
+		let c = document.getElementById('famil_neutral_c4').checked;
+		let d = document.getElementById('famil_notsofamil_c4').checked;
+		let e = document.getElementById('famil_somewhatfamil_c4').checked;
+		if (!(a||b||c||d||e))
+		{
+			//alert("condition 4,fmail");
+			all_fine = 1;
+		}
+		a = document.getElementById('veryeasy_c4').checked;
+		b = document.getElementById('fairlyeasy_c4').checked;
+		c = document.getElementById('moderate_c4').checked;
+		d = document.getElementById('fairlyhard_c4').checked;
+		e = document.getElementById('veryhard_c4').checked;
+		
+		if (!(a||b||c||d||e))
+		{
+			//alert("condition 4,hardq");
+			all_fine = 1;
+		}
+		a = document.getElementById('lotless_c4').checked;
+		b = document.getElementById('lotmore_c4').checked;
+		c = document.getElementById('perfect_c4').checked;
+		d = document.getElementById('bitless_c4').checked;
+		e = document.getElementById('bitmore_c4').checked;
+		
+		if (!(a||b||c||d||e))
+		{	
+			//alert("condition 4,timeq");
+			all_fine = 1;
+		}
+	
+		
+	
+	}
+	
+	
+	
+	
+	if (all_fine == 0){
+		//try to put the comment submittance here, or try to recreate it
+	
+		document.getElementById("endOfTaskForm").submit();	
+	}
+	else
+	{
+		alert ("Please complete all survey questions to submit the task");
+
+	}
+	}
+	
+
+	function writeToLogger(log){
+		document.getElementById('logger').value += log + '\n'
+	}
+	function writeToTableLogger(log){
+		//alert(log);
+		document.getElementById('table_logger').value += log + '\n'
+	}
+	
+	//first page - moving from registration to instructions page 1/3
+	function clickOnFirstInstructionButton(){
+			logCurrentTime("first instructions section")
+			if (document.getElementById("prolific_id").value === ""){
+				alert("In order to continue, you should insert a Prolific user id number.")
+				return
+			}
+			document.body.scrollTop = 0;
+			document.documentElement.scrollTop = 0;
+		    phaseName= stepsNames[step+1]
+		    document.getElementById("registration_section").style.display ="none";
+			showSection("pre");
+			step += 1
+	}
+	function ClickOnFirstReturnButton(){
+	//chosen_condition = "cond_3"; //change condition here
+	//get condition value from document:
+	//if (document.getElementById("condition_chooser").value != ""){
+		//chosen_condition = "cond_"+document.getElementById("condition_chooser").value;
+	//}
+	
+			logCurrentTime("second instructions section")
+			document.body.scrollTop = 0;
+			document.documentElement.scrollTop = 0;
+		    phaseName= stepsNames[step-1]
+		    document.getElementById("pre").style.display ="block";
+			document.getElementById("instructions").style.display ="none";
+			alert(chosen_condition);
+			if (chosen_condition === 'cond_1') {
+				document.getElementById("instructions_cond1").style.display ="none";}
+			if (chosen_condition === 'cond_2'){
+				document.getElementById("instructions_cond2").style.display ="none";}
+			if (chosen_condition === 'cond_3'){
+				document.getElementById("instructions_cond3").style.display ="none";;
+				document.getElementById("instructions_cond123").style.display ="none"}
+			if (chosen_condition === 'cond_4'){
+			document.getElementById("instructions_cond_123").style.display ="none"
+			document.getElementById("instructions_next_cond_123").style.display ="none"
+			document.getElementById("instructions_next_cond_4").style.display ="none"
+			document.getElementById("example_solutions_inspirations_cond123").style.display ="none"
+			
+				showSection("example_solutions_inspirations_cond4");
+				}
+			step -= 1
+	}
+	
+	//second page - moving to instructions page 2
+	function clickOnInitialNextButton(){
+	//chosen_condition = "cond_3"; //change condition here
+	//get condition value from document:
+	//if (document.getElementById("condition_chooser").value != ""){
+		//chosen_condition = "cond_"+document.getElementById("condition_chooser").value;
+	//}
+	
+			logCurrentTime("second instructions section")
+			document.body.scrollTop = 0;
+			document.documentElement.scrollTop = 0;
+		    phaseName= stepsNames[step+1]
+		    document.getElementById("pre").style.display ="none";
+			showSection("instructions");
+			alert(chosen_condition);
+			if (chosen_condition === 'cond_1') {
+				showSection("instructions_cond1");}
+			if (chosen_condition === 'cond_2'){
+				showSection("instructions_cond2");}
+			if (chosen_condition === 'cond_3'){
+				showSection("instructions_cond3");
+				//document.getElementById("instructions_cond123").style.display ="none"}
+				}
+			if (chosen_condition === 'cond_4'){
+			document.getElementById("instructions_cond_123").style.display ="none"
+			document.getElementById("instructions_next_cond_123").style.display ="none"
+			document.getElementById("instructions_next_cond_4").style.display ="block"
+			document.getElementById("example_solutions_inspirations_cond123").style.display ="none"
+			
+				showSection("example_solutions_inspirations_cond4");
+				}
+			step += 1
+	}
+	
+		function ClickOnSecondReturnButton(){
+			document.getElementById("instructions2").style.display ="none";
+			step -= 2
+			clickOnInitialNextButton()
+			
+			
+	}
+	
+	//third page - instructions page 2 to next page
+	function clickOnInitialNext2Button(){
+			logCurrentTime("third instructions section")
+			document.body.scrollTop = 0;
+			document.documentElement.scrollTop = 0;
+		    phaseName= stepsNames[step+1]
+			document.getElementById("instructions").style.display ="none";
+			alert(chosen_condition);
+			if (chosen_condition === 'cond_1') {
+				document.getElementById("instructions_cond1").style.display ="none";
+				}
+			if (chosen_condition === 'cond_2'){
+				document.getElementById("instructions_cond2").style.display ="none";
+				}
+			if (chosen_condition === 'cond_3'){
+				document.getElementById("instructions_cond3").style.display ="none";
+				}
+			if (chosen_condition === 'cond_4'){
+				document.getElementById("instructions_cond4").style.display ="none";
+				}
+			showSection("instructions2");
+			
+			step += 1
+	}
+	
+	//moving from instructions page 3 to main 
+	function goToMainSection(){
+			logCurrentTime("condition section");
+		    document.body.scrollTop = 0;
+			document.documentElement.scrollTop = 0;
+		    phaseName= stepsNames[step+1]
+		    document.getElementById("instructions2").style.display ="none";
+			alert(chosen_condition);
+			document.getElementById("banner").innerHTML = "Find solutions using an inspiration source"
+			if (chosen_condition === 'cond_4'){
+				document.getElementById("banner").innerHTML = "Find solutions yourself"
+			}
+			showSection("main");
+			moveToInspirationSection()
+			step += 1
+	}
+
+	function showInspirationSection(cond){
+			alert("shpow inspiration");
+			document.getElementById('scroll_inspiration_solutions').scrollTop = 0;
+			showSection("inspiration_based_solutions_blank_lines")
+			document.getElementById("task_chosen_problem").innerHTML = chosen_problem;
+			showInspirationBlankLinesAccordingToPhase(cond)
+			document.getElementById("button3" + chosen_condition).style.display ="none";
+			
+			mtimer = setInterval(myTimerInspirationAnswer, 1000)
+			document.getElementById('scroll_inspiration_solutions').scrollTop = 0;
+	}
+
+    function showSection(nameToShow)
+   {
+		// show seed div
+        document.getElementById(nameToShow).style.display ="block";
+
+   }
+
+
+function submitTask(){
+
+	logCurrentTime("submit task section");
+
+	// turn off last elements
+	document.getElementById("inspiration_based_solutions_instructions").style.display ="none";
+	document.getElementById("inspiration_based_solutions_blank_lines").style.display ="none"; // blank lines
+	// document.getElementById("self_solutions_instructions").style.display ="none";
+	// document.getElementById("self_solutions_blank_lines").style.display ="none";
+	document.getElementById("question_instruction").style.display ="none";
+	document.getElementById("main_table").style.display ="none";
+	// document.getElementById("partNumber").style.display ="none";
+
+	// show submit elements
+	document.getElementById("banner").innerHTML = "Short survey"
+	alert(chosen_condition);
+	if (chosen_condition == "cond_4"){
+		document.getElementById("submit_cond4").style.display ="block";
+	}
+	else {
+		document.getElementById("submit_cond123").style.display ="block";
+	
+	}
+	
+	//alert(document.getElementById("table_logger").value);
+
+}
+
+
+
+function myTimerInspirationAnswer() {
+
+	//todo - change here to go down every minute, rather then seconds
+	const minutesLeft  = Math.floor(totalSecondsWithInspiration / 60);
+	if (minutesLeft  > 0)
+	{
+    document.getElementById("timer_inspiration").innerHTML = '<span style = "font-size:30px"> &#8987; You have <font color="red">' + minutesLeft + ' </font> minutes left &#8987; </span>';
+		
+	}
+	else
+	{
+		document.getElementById("timer_inspiration").innerHTML = '<span style = "font-size:30px"> &#8987; You have <font color="red"> less than a minute left </font> &#8987; </font>';
+
+		}
+	totalSecondsWithInspiration--;
+
+	if (totalSecondsWithInspiration<0)
+	{
+		clearInterval(mtimer);
+		document.getElementById("demo").innerHTML = 'Time\'s  up!';
+		submitTask()
+	}
+	else if (totalSecondsWithInspiration<300){
+		// document.getElementById("buttonNextAfterMinTimeInsp").style.display ="block";
+	}
+	if (totalSecondsWithInspiration % 30 == 0){
+	logCurrentTableTime(totalSecondsWithInspiration);
+	}
+}
+</script>
+
+<form action="https://docs.google.com/forms/u/0/d/e/1FAIpQLScZtAYVhBm-377FDCohVeuGdYNh7gY9GXXgBEN1wc3Oh5iAZg/formResponse" method="post" id= "endOfTaskForm">
+<section class="container" id="Other">
+<!--<section  id="Other">-->
+	<div class="col-xs-12 col-md-12">
+		<textarea cols="40" id="logger" name="entry.247256415" rows="5" style="display:none">task logs:</textarea>
+	</div>
+	<div class="col-xs-12 col-md-12">
+		<textarea cols="40" id="table_logger" name="entry.953486756" rows="5" style="display:none">task table logs:</textarea>
+	</div>
+	
+	<div class="col-xs-12 col-md-12">
+		<textarea cols="40" id="prolific_exp_num" name="entry.1687743065" rows="5" style="display:none">00000</textarea>
+	</div>
+<div id="registration_section" style="margin:30px 50px 20px 50px; font-family: Tahoma,serif; font-size: 18px"><br />
+
+<br />
+<br />
+<br />
+
+<p align="justify">
+
+	<div id="registration" style="background-color:paleturquoise; margin-top: -4%" width="100%">Registration</div>
+	<br/>
+	<br/>
+
+	In order to start the task, please enter you Prolific user id:&nbsp;&nbsp;<textarea cols="40" id="prolific_id" name="entry.1592742615" rows="1.5"></textarea>
+	<br/>
+	<br/>
+	By clicking on the "Continue to the experiment" button you are agreeing to the terms in 
+	<a href = "MuseConsent.pdf" target="_blank"> the consent form </a><br/> <br>
+	
+
+
+<input name="buttonRegistration" onclick="clickOnFirstInstructionButton()" type="button" style="font-family: Tahoma,serif; font-size: 18px" value="Continue to the experiment instructions!" /></div>
+
+
+<div id="pre" style="display:none;margin:30px 50px 20px 50px; font-family: Tahoma,serif; font-size: 18px"><br />
+<br />
+<br />
+<br />
+
+<p align="justify">
+
+	<div id="banner_instruction_1" style="background-color:paleturquoise; margin-top: -4%" width="100%">Instructions page 1/3</div>
+	<br/>
+	<br/>
+
+	In this experiment we ask you to find <font color="#006400"><b>original solutions</b></font> to problems.<br/>
+	What do we mean by original solutions? Let's look at an example:
+    <br />
+    <br />
+	Say the <font color="#9932cc"><b>problem</b></font> is 'dry your hair'.<br />
+	<br/>
+	Possible original solutions can be:<br/>
+	<br/>
+	<b>1) Existing products that are not meant for drying hair (but could dry hair)</b> such as <em>leaf blower</em>
+	(Leaf blowers propel the air and can be used to dry hair.)
+	<br />
+	<b>2) New inventions.</b> For example, you could think of a <emph>special hair spray</emph> that helps your hair dry faster, similar to a nail-polish drying spray.
+		You do not need to think through all the details, just the <font color="#006400"><b>main idea</b></font>.
+		<br/>
+		<br />
+		Known solutions for drying hair, such as a hair dryer or patting the hair with a towel are not considered
+	    original solutions, and are <font color="#dc143c"><b>not a good answer</b></font> for this task.
+		<br />
+		<br />
+		(This task is for academic study, not for commercial use. Ideas that you generate will remain yours.)<br/><br/>
+<input name="buttonpre" onclick="clickOnInitialNextButton()" type="button" style="font-family: Tahoma,serif; font-size: 18px" value="Continue to the next instructions!" /></div>
+
+
+<div id="instructions_cond4" style="display:none;margin:30px 50px 20px 50px; font-family: Tahoma,serif; font-size: 18px"><br />
+<br />
+<br />
+<br />
+	<p align="justify">
+
+		<div id="banner_instruction_2" style="background-color:paleturquoise; margin-top: -4%" width="100%">Instructions page 2/3</div>
+		<br/>
+		<br/>
+
+		During the experiment we will show you a single <font color="#9932cc"><b>problem</b></font>.
+		Then, we will ask you to think of original solutions to that problem (<b>not the common ways to solve the problem</b>).
+	    <br />
+		You will have <b>15 minutes</b> to find solutions.
+	<br />
+	<br />
+	<u>The output of this task:</u>
+		During this task, you will be asked to fill in a table with
+		(1) your <font color="#006400"><b>original solutions</b></font>,
+		(2) an <b>explanation of what you were inspired by</b>. <br/>
+		<br/>
+		<br/>
+		For example, the answers for the example above would look this:
+	<div id="example_solutions_inspirations" style="display:block">
+		<table style="border: 1px solid black">
+		<tbody>
+		<tr style="border:2px solid #aaa;">
+		<td colspan="1" width="40%">
+		<font color="#006400"><b>Solution 1</b></font>:<br/><textarea style="color: royalblue" width="100%" id="example_1" name="example_1" rows="3">Hair drying machine: a machine that spins your hair until it is dry</textarea><br /> </td>
+		<td colspan="1" width="40%">
+		<font color="#006400">Solution 2</font>:<br/><textarea style="color: royalblue" width="100%" id="example_2" name="example_1" rows="3">A hair spray that has drying qualities</textarea><br />
+		</td>
+		<td colspan="1" width="20%">
+		<font color="#006400">Solution 3</font>:<br/><textarea style="color: royalblue" width="40%" id="example_3" name="example_1" rows="3">A heating hat: a hat with a heating mechanism that you put on top of your head.</textarea><br />
+		<br />
+		</td>
+		<td colspan="1" width="40%">
+		What inspired you 1:<br/><textarea style="color: royalblue" width="100%" id="example_insp_1" name="example_insp_1" rows="3">A dryer spins the clothes to dry them. I thought that maybe a similar idea can work for hair</textarea><br />
+		</td>
+		<td colspan="1" width="40%">
+		What inspired you 2:<br/><textarea style="color: royalblue" width="100%" id="example_insp_2" name="example_insp_2" rows="3">I was inspired by a nail polish drying spray: you spray it on your nails and the nail polish gets dry faster.</textarea><br />
+		</td>
+		<td colspan="1" width="20%">
+		What inspired you 3:<br/><textarea style="color: royalblue" width="40%" id="example_insp_3" name="example_insp_3" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result with the hair drying faster.</textarea><br />
+		<br />
+		</td>
+		</tr>
+		</tbody>
+		</table>
+		</div>
+		<br />
+		Please try to think hard and be creative!<br />
+    	<br />
+		<br />
+		<input name="buttonreturn1" onclick="ClickOnFirstReturnButton()" type="button" style="font-family: Tahoma,serif; font-size: 18px" value="Return to the previous instructions page" />
+        <input name="buttonpre2" onclick="clickOnInitialNext2Button()" type="button"
+			   style="font-family: Tahoma,serif; font-size: 18px" value="Continue to the next instructions!" /></div>
+
+<div id="instructions" style="display:none;margin:30px 50px 20px 50px; font-family: Tahoma,serif; font-size: 18px"><br />
+<br />
+<br />
+<br />
+	<p align="justify">
+
+		<div id="banner_instruction_2" style="background-color:paleturquoise; margin-top: -4%" width="100%">Instructions page 2/3</div>
+		<br/>
+		<br/>
+
+		During the experiment we will show you a single <font color="#9932cc"><b>problem</b></font>.
+		Then, we will ask you to think of original solutions to that problem (<b>not the common ways to solve the problem</b>).
+	    <br />
+		<br />
+		<div id ="instructions_cond_123" style="display:block">
+		To help you, we provide you with  <font color="#00008b"><b> 20 potential inspirations</b></font>.
+		<br/>
+		The inspirations <emph>might</emph> help you think of new solutions
+		(but don’t worry if they don’t, you don’t have to use them).
+		</div>
+		<div id= "instructions_cond1" style="display:none">
+		Each inspiration consists of a problem that might be related to the problem you will be asked to solve. Think of how ways to tackle those problems might inspire you in solving your own problem. 
+		<b>Here is an example of 3 inspirations for the problem of "dry your hair": </b> <br/>
+		<table style="margin-left: 3%; border: 3px solid #679b5c ; width: 45%">
+		<tbody>
+		<tr>
+		<td style="display:none"><b>Inspirational texts:</b></td>
+		</tr>
+		<br/>
+		<tr style="border: 2px solid #080809;">
+		<td>
+		<b><mark background-color="red">1.</mark></b> Consider the problem of: <b>Drying clothes.</b><br/>
+
+<b><mark>2.</mark></b> Consider the problem of: <b>Drying nail polish.</b><br/>
+
+<b><mark>3.</mark></b> Consider the problem of: <b>Washing hair without water.</b><br/>
+ <br/><br/>
+		</td>
+		</tr>
+		</tbody>
+		</table>
+		</div>
+		
+		<div id= "instructions_cond2" style="display:none">
+		Each inspiration consists of a problem that might be related to the problem you will be asked to solve. Think of how ways to tackle those problems might inspire you in solving your own problem. 
+		To help you come up with more ideas, we also list some concepts associated with each of the 20 problems. 
+
+		<b>Here is an example of 3 inspirations for the problem of "dry your hair": </b> <br/>
+		<table style="margin-left: 3%; border: 3px solid #679b5c ; width: 45%">
+		<tbody>
+		<tr>
+		<td style="display:none"><b>Inspirational texts:</b></td>
+		</tr>
+		<br/>
+		<tr style="border: 2px solid #080809;">
+		<td>
+	<b><mark>1.</mark></b> Consider the problem of: <b>Drying clothes.</b> <br/>
+	<UL type = "square" style="margin-top: -2px;">
+	<LI>
+Concepts related to this problem:<br/>
+<UL>
+<LI>Home appliances<br/>
+<LI>Rotating tumbler<br/>
+</UL></UL>
+<br/>
+<b><mark>2.</mark></b> Consider the problem of:  <b>Drying nail polish.</b><br/>
+<UL type = "square" style="margin-top: -2px;">
+<LI>
+Concepts related to this problem:<br/>
+<UL>
+<LI>Spray<br/>
+</UL></UL>
+<br/>
+<b><mark>3.</mark></b> Consider the problem of: <b>Washing hair without water.</b><br/>
+<UL type = "square" style="margin-top: -2px;">
+<LI>Concepts related to this problem:<br/>
+<UL>
+<LI>Baby powder<br/>
+<LI>Oil absorption<br/>
+<LI>Hair products<br/>
+</UL></UL>
+<br/>
+		</td>
+		</tr>
+		</tbody>
+		</table>
+		</div>
+		
+		<div id= "instructions_cond3" style="display:none">
+		Each inspiration consists of a problem that might be related to the problem you will be asked to solve. Think of how ways to tackle those problems might inspire you in solving your own problem. 
+		To help you come up with more ideas, we also list some statements related to each of the 20 problems. 
+
+		<b>Here is an example of 3 inspirations for the problem of "dry your hair": </b> <br/>
+		<table style="margin-left: 3%; border: 3px solid #679b5c ; width: 40%">
+		<tbody>
+		<tr>
+		<td style="display:none"><b>Inspirational texts:</b></td>
+		</tr>
+		<br/>
+		<tr style="border: 2px solid #080809;">
+		<td>
+<b><mark>1.</mark></b> Consider the problem of: <b>Drying clothes.</b><br/>
+<UL type="square" style="margin-top: -2px;">
+<LI> 
+Statements related to this problem:<br/>
+ <UL> 
+<LI> Home appliances like <b>dryers</b> are essential for efficiently drying clothes and saving time on laundry.<br/>
+
+<LI> A <b>rotating tumbler</b> inside a dryer is responsible for agitating and drying clothes during a cycle.<br/>
+
+</UL></UL>
+<b><mark>2.</mark></b> Consider the problem of: <b>Drying nail polish.</b><br/>
+<UL type="square" style="margin-top: -2px;">
+<LI> 
+Statements related to this problem:<br/>
+<UL>
+<LI> To dry nail polish faster, use a quick-dry <b>spray.</b><br/>
+
+</UL></UL>
+<b><mark>3.</mark></b> Consider the problem of: <b>Washing hair without water.</b><br/>
+<UL type="square" style="margin-top: -2px;">
+<LI> 
+Statements related to this problem:<br/>
+<UL>
+<LI> To wash hair without water, try using <b>baby powder</b> as a dry shampoo to absorb oil and refresh hair.
+
+
+<LI> Dry shampoo can <b>absorb oil</b>, leaving hair looking clean and refreshed between washes.
+
+
+<LI> <b>Dry shampoos</b> are popular for absorbing oil, adding volume, and freshening hair between washes without water.
+</UL></UL>
+
+<br/><br/>
+		</td>
+		</tr>
+		</tbody>
+		</table>
+		</div>
+		
+		You will have <b>15 minutes</b> to find solutions.
+	<br />
+	<br />
+	<div id ="instructions_next_cond_123" style="display:block">
+	<u>The output of this task:</u>
+		During this task, you will be asked to fill in a table with
+		(1) your <font color="#006400"><b>original solutions</b></font>,
+		(2) an <b>explanation of what you were inspired by</b>, and
+		(3) the inspiration source id (the number in <font color="red"><b> red </b></font>).
+		(Inspirations have id numbers assigned to them).
+		In case you didn't use an inspiration source for your solution, write <b> ME </b> in the inspiration id column .
+		<br/>
+		<br/>
+		</div>
+		<div id ="instructions_next_cond_4" style="display:none">
+	<u>The output of this task:</u>
+		During this task, you will be asked to fill in a table with
+		(1) your <font color="#006400"><b>original solutions</b></font>,
+		(2) an <b>explanation of what you were inspired by</b>.
+		<br/>
+		<br/>
+		</div>
+		For example, the answers for the example above would look this:
+
+	<div id="example_solutions_inspirations_cond4" style="display:none">
+		<table style="border: 1px solid black">
+		<tbody>
+		<tr style="border:2px solid #aaa;">
+		<td colspan="1" width="40%">
+		Solution 1 </b>:<textarea style="color: royalblue;width:100%" id="example_1" name="example_1" rows="3">Hair drying machine: a machine that spins your hair until it is dry</textarea><br />
+		</td>
+		<td colspan="2" width="40%">
+		What inspired you 1:<br/><textarea style="color: royalblue;width:100%" id="example_insp_1" name="example_insp_1" rows="3">A dryer spins the clothes to dry them. I thought that maybe a similar idea can work for hair</textarea><br />
+		</td>
+		</tr>
+		<tr style="border:2px solid #aaa;">
+		<td colspan="1" width="40%">
+		Solution 2</b>:<textarea style="color: royalblue;width:100%" id="example_2" name="example_1" rows="3">A hair spray that has drying qualities</textarea><br />
+		</td>
+		<td colspan="2" width="40%">
+		What inspired you 2:<br/><textarea style="color: royalblue;width:100%" id="example_insp_2" name="example_insp_2" rows="3">I was inspired by a nail polish drying spray: you spray it on your nails and the nail polish gets dry faster.</textarea><br />
+		</td>
+		</tr>
+		<tr style="border:2px solid #aaa;">
+		<td colspan="1" width="20%">
+		Solution 3</b></font>:<textarea style="color: royalblue;width:100%" id="example_3" name="example_1" rows="3">A heating hat: a hat with a heating mechanism that you put on top of your head.</textarea><br />
+		<br />
+		</td>
+		<td colspan="2" width="40%">
+		What inspired you 3:<br/><textarea style="color: royalblue;width:100%" id="example_insp_3" name="example_insp_3" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result with the hair drying faster.</textarea><br />
+		<br />
+		</td>
+
+		</tr>
+		</tbody>
+		</table>
+		</div>
+		<div id="example_solutions_inspirations_cond123" style="display:block">
+		<table style="border: 1px solid black">
+		<tbody>
+		<tr style="border:2px solid #aaa;">
+		<td colspan="1" width="40%">
+		Solution 1:<br/><textarea style="color: royalblue;width:100%" id="example_1" name="example_1" rows="3">A heating hat: a hat with a heating mechanism that you put on top of your head.</textarea><br />
+		</td>
+		<td colspan="2" width="40%">
+		What inspired you 1:<br/><textarea style="color: royalblue;width:100%" id="example_insp_1" name="example_insp_1" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result with the hair drying faster.</textarea><br />
+		</td>
+		<td colspan="1" width="20%">
+		Inspiration id 1:<br/><textarea style="color: royalblue;width:50%; margin-left:10" id="example_insnp_num_1" name="example_insnp_num_1" rows="3">ME</textarea><br />
+		</td>
+		</tr>
+		<tr style="border:2px solid #aaa;">
+		<td colspan="1" width="40%">
+		Solution 2:<br/><textarea style="color: royalblue;width:100%" id="example_2" name="example_1" rows="3">A hair spray that has drying qualities</textarea><br />
+		</td>
+		<td colspan="2" width="40%">
+		What inspired you 2:<br/><textarea style="color: royalblue;width:100%" id="example_insp_2" name="example_insp_2" rows="3">I was inspired by a nail polish drying spray: you spray it on your nails and the nail polish dries faster.</textarea><br />
+		</td>
+		<td colspan="2" width="20%">
+		Inspiration id 2:<br/><textarea style="color: royalblue;width:50%; margin-left:10" id="example_insnp_num_2" name="example_insnp_num_2" rows="3">2</textarea><br />
+		</td>
+		</tr>
+		<tr style="border:2px solid #aaa;">
+		<td colspan="1" width="20%">
+		Solution 3:<br/><textarea style="color: royalblue;width:100%" id="example_3" name="example_1" rows="3">Hair drying machine: a machine that spins your hair until it is dry
+</textarea><br />
+		<br />
+		</td>
+		<td colspan="2" width="40%">
+		What inspired you 3:<br/><textarea style="color: royalblue;width:100%" id="example_insp_3" name="example_insp_3" rows="3">A dryer spins the clothes to dry them. I thought that maybe a similar idea can work for hair
+</textarea><br />
+		<br />
+		</td>
+		<td colspan="2" width="40%">
+		Inspiration id 3:<br/><textarea style="color: royalblue;width:50%; margin-left:10" id="example_insnp_num_3" name="example_insnp_num_3" rows="3">1</textarea><br />
+		<br />
+		</td>
+		</tr>
+		</tbody>
+		</table>
+		</div>
+		<br />
+		Please try to think hard and be creative!<br />
+    	<br />
+		<br />
+		<input name="buttonreturn1" onclick="ClickOnFirstReturnButton()" type="button" style="font-family: Tahoma,serif; font-size: 18px" value="Return to the previous instructions page" />
+        <input name="buttonpre2" onclick="clickOnInitialNext2Button()" type="button"
+			   style="font-family: Tahoma,serif; font-size: 18px" value="Continue to the next instructions!" /></div>
+
+
+<div id="instructions2" style="display:none;margin:30px 50px 20px 50px; font-family: Tahoma,serif; font-size: 18px"><br />
+<br />
+<br />
+<br />
+<p align="justify">
+
+	<div id="banner_instruction_3" style="background-color:paleturquoise; margin-top: -4%" width="100%">Instructions page 3/3</div>
+	<br/>
+	<br/>
+		Overall, <b>total amount of time required to complete the task is around <**15**> minutes.</b> </br>
+		After clicking on the "Continue to the experiment!" button <b> you will not be able to review the instructions again. </b></br>
+		Please do not start the task if you do not have the time.
+		<br/>
+		<br/>
+	<input name="buttonreutrn2" onclick="ClickOnSecondReturnButton()" type="button"
+		   style="font-family: Tahoma,serif; font-size: 18px" value="Return to the previous instructions page!" />
+    <input name="buttonpre" onclick="goToMainSection()" type="button"
+		   style="font-family: Tahoma,serif; font-size: 18px" value="Continue to the experiment!" /></div>
+
+<div id="main" style="display:none;margin:30px 50px 20px 50px; font-family: Tahoma,serif; font-size: 18px">
+<div id="banner" style="background-color:paleturquoise" width="100%">Find solutions yourself</div>
+	<br />
+	
+	
+
+
+<table id="main_table" style="font-family: Tahoma,serif; font-size: 18px" cellpadding="3">
+	<tbody>
+		<tr>
+			<td style="padding-right:20px; padding-top: 15px" valign="TOP">
+<!--			<div id="partNumber" class="numberCircle">1</div>-->
+			</td>
+			<td>
+			<script language="Javascript">
+              </script>
+
+			<table id="inspiration_based_solutions_instructions" style="border-collapse: collapse; display:none; font-family: Tahoma,serif; font-size: 18px">
+				<tbody id="cond_2">
+					<tr>
+						<td colspan="2">
+							<p><font face="Times New Roman"><input id="stimulus1" name="stimulus2" type="hidden" value="" /></font></p>
+							<br />
+							<p align="justify">
+							After clicking on the button below, you will be presented with a problem and the inspirations. 
+							<br />
+								Use the numbers on the left as the inspiration id. <br/>
+								<font color="#dc143c"><b>Do not</b></font> use any search engine or external knowledge source (you can use a dictionary).<br/>
+								Fill the the table with as many ideas as you come up with. You do not have to fill the entire table.
+								</br>
+								If you come up with more than 10 ideas, write all of them in the "more" entries.
+							<br />
+								<br />
+							<b>Reminder: this is how you fill the table:</b>
+							<br />
+
+							<div id="example_insp_solutions_links" style="display:block">
+								<table style="border: 1px solid black">
+								<tbody>
+								<tr style="border:2px solid #aaa;">
+								<td colspan="1" width="40%">
+								Solution 1:<br/><textarea style="color: royalblue;width:100%" id="example_2" name="example_1" rows="3">Leaf blower for hair</textarea><br />
+								</td>
+								<td colspan="2" width="40%">
+								What inspired you 1:<br/><textarea style="color: royalblue;width:100%" id="example_insp_2" name="example_insp_2" rows="3">I saw a text about leaf blowers. the blower circulates the air, similar to a natural wind which dries the hair</textarea><br />
+								</td>
+								<td colspan="2" width="20%">
+								Inspiration id 1:<br/><textarea style="color: royalblue;width:50%; margin-left:10" id="example_insnp_num_2" name="example_insnp_num_2" rows="3">8,5</textarea><br />
+								</td>
+								</tr>
+								</tbody>
+								</table>
+							</div>
+							<br />
+							<br />
+						<input id="button3cond_2" name="button3" onclick="showInspirationSection('cond_2')" style="font-family: Tahoma,serif; font-size: 18px" type="button" value="Got it, let's go!" />
+						</td>
+					</tr>
+				</tbody>
+				<tbody id="cond_3">
+					<tr><!-- instructions -->
+						<td colspan="2">
+							<p><font face="Times New Roman"><input id="stimulus2" name="stimulus2" type="hidden" value="" /></font></p>
+							<br />
+							<p align="justify">
+							
+							After clicking on the button below, you will be presented with a problem and the inspirations. 
+							<br />
+								Use the numbers on the left as the inspiration id.<br/>
+								<font color="#dc143c"><b>Do not</b></font> use any search engine or external knowledge source (you can use a dictionary).<br/>
+								Fill the the table with as many ideas as you come up with. You do not have to fill the entire table.
+								</br>
+								If you come up with more than 10 ideas, write all of them in the "more" entries.
+							<br />
+								<br />
+							<b> Reminder: this is how you fill the table:</b>
+							<br />
+
+							<div id="example_insp_solutions_texts" style="display:block">
+								<table style="border: 1px solid black">
+								<tbody>
+								<tr style="border:2px solid #aaa;">
+								<td colspan="1" width="40%">
+								Solution 1:<br/><textarea style="color: royalblue;width:100%" id="example_2" name="example_1" rows="3">Leaf blower for hair</textarea><br />
+								</td>
+								<td colspan="2" width="40%">
+								What inspired you 1:<br/><textarea style="color: royalblue;width:100%" id="example_insp_2" name="example_insp_2" rows="3">I saw a text about leaf blowers. the blower circulates the air, similar to a natural wind which dries the hair</textarea><br />
+								</td>
+								<td colspan="2" width="20%">
+								Inspiration id 1:<br/><textarea style="color: royalblue;width:50%; margin-left:10" id="example_insnp_num_2" name="example_insnp_num_2" rows="3">8,5</textarea><br />
+								</td>
+								</tr>
+								</tbody>
+								</table>
+							</div>
+							<br />
+							<br />
+						<input id="button3cond_3" name="button3" style="font-family: Tahoma,serif; font-size: 18px" onclick="showInspirationSection('cond_3')" type="button" value="Got it, let's go!" /></td>
+					</tr>
+				</tbody>
+				<tbody id="cond_1">
+					<tr>
+						<td colspan="2">
+							<p><font face="Times New Roman"><input id="stimulus3" name="stimulus3" type="hidden" value="" /></font></p>
+							<br />
+							<p align="justify">
+							After clicking on the button below, you will be presented with a problem and the inspirations. 
+							<br />
+								Use the numbers on the left as the inspiration id.<br/>
+								<font color="#dc143c"><b>Do not</b></font> use any search engine or external knowledge source (you can use a dictionary).<br/>
+								Fill the the table with as many ideas as you come up with. You do not have to fill the entire table.
+								</br>
+								If you come up with more than 10 ideas, write all of them in the "more" entries.
+							<br />
+								<br />
+							<b>Reminder: this is how you fill the table:</b>
+							<br />
+
+							<div id="example_insp_solutions_engine" style="display:block">
+								<table style="border: 1px solid black">
+								<tbody>
+								<tr style="border:2px solid #aaa;">
+								<td colspan="1" width="40%">
+								Solution 1:<br/><textarea style="color: royalblue;width:100%" id="example_2" name="example_1" rows="3">Leaf blower for hair</textarea><br />
+								</td>
+								<td colspan="2" width="40%">
+								What inspired you 1:<br/><textarea style="color: royalblue;width:100%" id="example_insp_2" name="example_insp_2" rows="3">I saw a text about leaf blowers. the blower circulates the air, similar to a natural wind which dries the hair</textarea><br />
+								</td>
+								<td colspan="2" width="20%">
+								Inspiration id 1</font>:<br/><textarea style="color: royalblue;width:50%; margin-left:10" id="example_insnp_num_2" name="example_insnp_num_2" rows="3">8,5</textarea><br />
+								</td>
+								</tr>
+								</tbody>
+								</table>
+							</div>
+							<br />
+							<br />
+						<input id="button3cond_1" name="button3" style="font-family: Tahoma,serif; font-size: 18px" onclick="showInspirationSection('cond_1')" type="button" value="Got it, let's go!" /></td>
+					</tr>
+				</tbody>
+				<tbody id="cond_4">
+					<tr>
+						<td colspan="2">
+						<p><font face="Times New Roman"><input id="stimulus4" name="stimulus4" type="hidden" value="" /></font></p>
+							<br />
+							<br />
+							<font color="#dc143c"><b>Do not</b></font> use any search engine or external knowledge source (you can use a dictionary).<br/>
+							<br />
+							<br />
+								Fill the the table with as many ideas as you come up with. You do not have to fill the entire table.
+								</br>
+								If you come up with more than 10 ideas, write all of them in the "more" entries.
+							<br />
+							<br />
+							<b>Reminder: this is how you fill the table:</b>
+							<br />
+
+							<div id="example_solutions_nothing" style="display:block">
+								<table style="border: 1px solid black">
+		<tbody>
+		<tr style="border:2px solid #aaa;">
+		<td colspan="1" width="40%">
+		Solution 1:<br/><textarea style="color: royalblue;width:100%" id="example_1" name="example_1" rows="3">Leaf blower for hair</textarea><br />
+		</td>
+		<td colspan="2" width="40%">
+		What inspired you 1:<br/><textarea style="color: royalblue;width:100%" id="example_insp_1" name="example_insp_1" rows="3">I saw a text about leaf blowers. the blower circulates the air, similar to a natural wind which dries the hair.</textarea><br />
+		</td>
+		</tr>
+								</tbody>
+								</table>
+							</div>
+							<br />
+							<br />
+						<input id="button3cond_4" name="button3" style="font-family: Tahoma,serif; font-size: 18px" onclick="showInspirationSection('cond_4')" type="button" value="Got it, let's go!" /></td>
+					</tr>
+				</tbody>
+			</table>
+			</td>
+		    </tr>
+			</tbody>
+			</table>
+			</td>
+		    </tr>
+			</tbody>
+			</table>
+			<br />
+		   <br />
+
+		<div id="inspiration_based_solutions_blank_lines" style="display:none;">
+		<div id="question_instruction">In this task, we ask you to find solutions to the problem:
+		<font color="#9932cc"><b><span id="task_chosen_problem"></span></b></font></div>
+			<div id="inspiration_box_section_1" style="display:none">
+				<table style="margin-left: 3%; border: 3px solid #679b5c ; width: 80%; font-size: 100%">
+				<tbody>
+				<tr>
+				<td id="inspiration_box_1_text_line" style="display:none"><b>Inspirational texts:</b></td>
+				<td id="inspiration_box_1_links_line" style="display:none"><b>Inspirational texts:</b></td>
+				<td id="inspiration_box_1_graph_line" style="display:none"><b>Inspirational texts:</b></td>
+				</tr>
+				<br/>
+				<tr style="border: 2px solid #080809;">
+				<td id="cond_2_1" style="display:none;"><embed type="text/html" src="" width="100%" height="700px"></td>
+				<td id="cond_3_1" style="display:none;"><embed type="text/html" src="" width="100%" height="700px"></td>
+				<td id="cond_1_1" style="display:none;"><embed type="text/html" src="" width="100%" height="700px"></td>
+				</tr>
+				</tbody>
+				</table>
+				</div>
+			 <table style="margin-left: 3%; border: 1px solid black">
+				<tbody>
+				<br />
+					<tr colspan="1" width="10%" valign="TOP">
+						<div style="margin-left: 3%" id="timer_inspiration"></div>
+					</tr>
+					<tr style="border:2px solid #aaa;"><!-- inspiration -->
+						<td colspan="1" width="50%">
+						<div class="scrollable" id="scroll_inspiration_solutions"><b>Your solutions & Inspirations:</b>
+						<br />
+
+						<div id="inspiration_solutions_section1" style="display:block">
+						<br />
+						<table>
+						<tbody>
+						<tr style="border:2px solid #aaa;">
+						<td colspan="1" width="40%">
+						Solution 1:<br /><textarea style="width:100%" id="inspiration_solution_1_1" name="entry.314622552" rows="3"></textarea><br />
+						Solution 2:<br /><textarea style="width:100%" id="inspiration_solution_1_2" name="entry.1009268483" rows="3"></textarea><br />
+						Solution 3:<br /><textarea style="width:100%" id="inspiration_solution_1_3" name="entry.685221619" rows="3"></textarea><br />
+						Solution 4:<br /><textarea style="width:100%" id="inspiration_solution_1_4" name="entry.280201648" rows="3"></textarea><br />
+						Solution 5:<br /><textarea style="width:100%" id="inspiration_solution_1_5" name="entry.1697104374" rows="3"></textarea><br />
+						Solution 6:<br /><textarea style="width:100%"id="inspiration_solution_1_6" name="entry.2132214692" rows="3"></textarea><br />
+						Solution 7:<br /><textarea style="width:100%" id="inspiration_solution_1_7" name="entry.1620257989" rows="3"></textarea><br />
+						Solution 8:<br /><textarea style="width:100%" id="inspiration_solution_1_8" name="entry.329613343" rows="3"></textarea><br />
+						Solution 9:<br /><textarea style="width:100%" id="inspiration_solution_1_9" name="entry.1299464159" rows="3"></textarea><br />
+						Solution 10:<br /><textarea style="width:100%" id="inspiration_solution_1_10" name="entry.2087526347" rows="3"></textarea><br />
+						More solutions:<br /><textarea style="width:100%" id="more_inspiration_solutions_1" name="entry.1076502473" rows="3"></textarea><br />
+						<br />
+						</td>
+						<td id="explain_source_1" colspan="1" width="40%">
+						What inspired you 1:<br /><textarea style="width:100%" id="inspiration_explain_1_1" name="entry.231987172" rows="3"></textarea><br />
+						What inspired you 2:<br /><textarea style="width:100%" id="inspiration_explain_1_2" name="entry.2036569260" rows="3"></textarea><br />
+						What inspired you 3:<br /><textarea style="width:100%" id="inspiration_explain_1_3" name="entry.1330189626" rows="3"></textarea><br />
+						What inspired you 4:<br /><textarea style="width:100%" id="inspiration_explain_1_4" name="entry.489318433" rows="3"></textarea><br />
+						What inspired you 5:<br /><textarea style="width:100%" id="inspiration_explain_1_5" name="entry.1897412186" rows="3"></textarea><br />
+						What inspired you 6:<br /><textarea style="width:100%" id="inspiration_explain_1_6" name="entry.1435909855" rows="3"></textarea><br />
+						What inspired you 7:<br /><textarea style="width:100%" id="inspiration_explain_1_7" name="entry.179661302" rows="3"></textarea><br />
+						What inspired you 8:<br /><textarea style="width:100%" id="inspiration_explain_1_8" name="entry.221785788" rows="3"></textarea><br />
+						What inspired you 9:<br /><textarea style="width:100%" id="inspiration_explain_1_9" name="entry.2085492295" rows="3"></textarea><br />
+						What inspired you 10:<br /><textarea style="width:100%" id="inspiration_explain_1_10" name="entry.226881551" rows="3"></textarea><br />
+						What inspired you - More:<br /><textarea style="width:100%" id="more_inspiration_explain_1" name="entry.1309497841" rows="3"></textarea><br />
+						<br />
+						</td>
+						<td id="specific_source_1" colspan="1" width="40%">
+						Inspiration id 1:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_1" name="entry.2088415631" rows="3"></textarea><br />
+						Inspiration id 2:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_2" name="entry.2077441529" rows="3"></textarea><br />
+						Inspiration id 3:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_3" name="entry.311318780" rows="3"></textarea><br />
+						Inspiration id 4:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_4" name="entry.1273149936" rows="3"></textarea><br />
+						Inspiration id 5:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_5" name="entry.237667301" rows="3"></textarea><br />
+						Inspiration id 6:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_6" name="entry.1375352256" rows="3"></textarea><br />
+						Inspiration id 7:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_7" name="entry.1774926837" rows="3"></textarea><br />
+						Inspiration id 8:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_8" name="entry.640395032" rows="3"></textarea><br />
+						Inspiration id 9:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_9" name="entry.130655511" rows="3"></textarea><br />
+						Inspiration id 10:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_10" name="entry.1027911890" rows="3"></textarea><br />
+						More inspiration ids:<br /><textarea style="width:50%;margin-left:10" id="more_inspiration_source_1" name="entry.477282171" rows="3"></textarea><br />
+						<br />
+						</td>
+						</tr>
+						</tbody>
+						</table>
+						</div>
+
+						<div id="self_solutions_section1" style="display:block">
+						<table style="width:100%">
+						<tbody>
+						<tr style="border:2px solid #aaa;">
+						<td colspan="1" width="50%">
+						Solution 1:<br /><textarea style="width:85%" id="self_solution_1_1" name="entry.164619028" rows="3"></textarea>
+						</td>
+						<td colspan="1" style="width:50%" >
+						What inspired you 1:<br /><textarea style="width:85%;" id="self_inspiration_explain_1_1" name="entry.1008899533" rows="3"></textarea><br />
+						</td>
+						</tr>
+
+						
+						<tr style="border:2px solid #aaa;">
+						<td colspan="1" style="width:50%" >
+						Solution 2:<br /><textarea style="width:85%" id="self_solution_1_2" name="entry.255246931" rows="3"></textarea><br />
+						</td>
+						<td colspan="1" style="width:40%" >
+						What inspired you 2:<br /><textarea style="width:85%" id="self_inspiration_explain_1_2" name="entry.189345733" rows="3"></textarea><br />
+						</td>
+						</tr>
+						<tr style="border:2px solid #aaa;">
+						<td colspan="1" style="width:50%" >
+						Solution 3:<br /><textarea style="width:85%" id="self_solution_1_3" name="entry.714652671" rows="3"></textarea><br />
+						</td>
+						<td colspan="1" style="width:40%" >
+						What inspired you 3:<br /><textarea style="width:85%" id="self_inspiration_explain_1_3" name="entry.1620162062" rows="3"></textarea><br />
+						</td>
+						</tr>
+						<tr style="border:2px solid #aaa;">
+						<td colspan="1" style="width:50%" >
+						Solution 4:<br /><textarea style="width:85%" id="self_solution_1_4" name="entry.936328001" rows="3"></textarea><br />
+						</td>
+						<td colspan="1" style="width:40%" >
+						What inspired you 4:<br /><textarea style="width:85%" id="self_inspiration_explain_1_4" name="entry.335344347" rows="3"></textarea><br />
+						</td>
+						</tr>
+						<tr style="border:2px solid #aaa;">
+						<td colspan="1" style="width:50%" >
+						Solution 5:<br /><textarea style="width:85%" id="self_solution_1_5" name="entry.432462636" rows="3"></textarea><br />
+						</td>
+						<td colspan="1" style="width:40%" >
+						What inspired you 5:<br /><textarea style="width:85%" id="self_inspiration_explain_1_5" name="entry.681893091" rows="3"></textarea><br />
+						</td>
+						</tr>
+						<tr style="border:2px solid #aaa;">
+						<td colspan="1" style="width:50%" >
+						Solution 6:<br /><textarea style="width:85%" id="self_solution_1_6" name="entry.1974457815" rows="3"></textarea><br />
+						</td>
+						<td colspan="1" style="width:40%" >
+						What inspired you 6:<br /><textarea style="width:85%" id="self_inspiration_explain_1_6" name="entry.1055968095" rows="3"></textarea><br />
+						</td>
+						</tr>
+						<tr style="border:2px solid #aaa;">
+						<td colspan="1" style="width:50%" >
+						Solution 7:<br /><textarea style="width:85%" id="self_solution_1_7" name="entry.49668693" rows="3"></textarea><br />
+						</td>
+						<td colspan="1" style="width:40%" >
+						What inspired you 7:<br /><textarea style="width:85%" id="self_inspiration_explain_1_7" name="entry.782925220" rows="3"></textarea><br />
+						</td>
+						</tr>
+						<tr style="border:2px solid #aaa;">
+						<td colspan="1" style="width:50%" >
+						Solution 8:<br /><textarea style="width:85%" id="self_solution_1_8" name="entry.1248181641" rows="3"></textarea><br />
+						</td>
+						<td colspan="1" style="width:40%" >
+						What inspired you 8:<br /><textarea style="width:85%" id="self_inspiration_explain_1_8" name="entry.941382197" rows="3"></textarea><br />
+						</td>
+						</tr>
+						<tr style="border:2px solid #aaa;">
+						<td colspan="1" style="width:50%" >
+						Solution 9:<br /><textarea style="width:85%" id="self_solution_1_9" name="entry.1443130783" rows="3"></textarea><br />
+						</td>
+						<td colspan="1" style="width:40%" >
+						What inspired you 9:<br /><textarea style="width:85%" id="self_inspiration_explain_1_9" name="entry.837215395" rows="3"></textarea><br />
+						</td>
+						</tr>
+						<tr style="border:2px solid #aaa;">
+						<td colspan="1" style="width:50%" >
+						Solution 10:<br /><textarea style="width:85%" id="self_solution_1_10" name="entry.280309393" rows="3"></textarea><br />
+						</td>
+						<td colspan="1" style="width:40%" >
+						What inspired you 10:<br /><textarea style="width:85%" id="self_inspiration_explain_1_10" name="entry.2022967023" rows="3"></textarea><br />
+						</td>
+						</tr>
+						<tr style="border:2px solid #aaa;">
+						<td colspan="1" style="width:50%" >
+						More solutions:<br /><textarea style="width:85%" id="more_self_solutions_1" name="entry.1025646376" rows="3"></textarea><br />
+						<br />
+						</td>
+						<td colspan="1" style="width:40%" >
+						What inspired you - More:<br /><textarea style="width:85%" id="more_self_inspiration_explain_1" name="entry.1048140812" rows="3"></textarea><br />
+						<br />
+						</td>
+						</tr>
+						</tbody>
+						</table>
+						<br />
+						</div>
+
+						</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+	</div>
+		<div>
+			<br/>
+		</div>
+			<div id="two" style="display:none;">
+			<table>
+				<tbody>
+					<tr style="border:2px solid #aaa;">
+						<td colspan="1" width="50%">
+						</td>
+						<td colspan="1" valign="TOP">
+						<div id="demo"></div>
+						<br />
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			</div>
+		<div id="submit_cond123" style="display:none">
+			Great, you are done! <br />
+
+			Before submitting the task, we would appreciate it if you could answer these questions:.
+			<br />
+
+			<br />
+			<div class="panel-body" id="helpfulq"><b> Did you find the inspirations given to you helpful in coming up with new ideas? </b><br /> <br/>
+			<input type="radio" id="helpful_no" name="entry.275929979" value="no"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+  
+			<input type="radio" id="helpful_yes" name="entry.275929979" value="yes"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+			</br>
+			<label for="no">No</label> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+  <label for="yes">Yes</label> &nbsp &nbsp
+  </div>
+  </br></br>
+  <div class="panel-body" id="useagainq"><b> If possible, would you use such inspirations when trying to come up with new ideas in the future?  </b><br/> <br/>
+			<input type="radio" id="useagain_no" name="entry.449379310" value="no"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+  
+			<input type="radio" id="useagain_yes" name="entry.449379310" value="yes"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+			</br>
+			<label for="no">No</label> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+  <label for="yes">Yes</label> &nbsp &nbsp
+  
+
+  </div>
+  
+ </br> </br>
+    <div class="panel-body" id="Familiarity"><b> Before starting this task, how familiar were you with existing solutions to the problem presented to you? </b><br/> <br/>
+			&nbsp &nbsp &nbsp <input type="radio" id="famil_veryfamiliar" name="entry.910441527" value="very familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+  
+		&nbsp <input type="radio" id="famil_somewhatfamil" name="entry.910441527" value="somewhat familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+
+			<input type="radio" id="famil_neutral" name="entry.910441527" value="neutral">&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+		  
+		<input type="radio" id="famil_notsofamil" name="entry.910441527" value="notso familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+		  
+		<input type="radio" id="famil_notatallfamil" name="entry.910441527" value="notatall familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+		</br> 
+		<label for="very familiar">Very familiar</label> &nbsp &nbsp &nbsp
+		  <label for="somewhat familiar">Somewhat familiar</label> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+		<label for="neutral">Neutral</label> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+		<label for="notso familiar">Not so familiar</label> &nbsp &nbsp &nbsp &nbsp &nbsp
+		  <label for="notatall familiar">Not familiar at all</label> &nbsp &nbsp &nbsp &nbsp
+  
+
+  </div>
+  
+  </br></br>
+    <div class="panel-body" id="hardq"><b> How hard did you find this task?  </b><br />
+	&nbsp &nbsp<input type="radio" id="hardq_veryeasy" name="entry.1094765590" value="very easy"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+  
+<input type="radio" id="hardq_fairlyeasy" name="entry.1094765590" value="fairly easy"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+
+	<input type="radio" id="hardq_moderate" name="entry.1094765590" value="moderate">&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+  
+<input type="radio" id="hardq_fairlyhard" name="entry.1094765590" value="fairly hard"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+  
+<input type="radio" id="hardq_veryhard" name="entry.1094765590" value="very hard"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+</br> 
+<label for="very easy">Very easy</label> &nbsp &nbsp
+  <label for="fairlyeasy">Fairly easy</label> &nbsp &nbsp &nbsp
+<label for="moderate">Moderate</label> &nbsp &nbsp &nbsp &nbsp
+<label for="fairlyhard">Fairly hard</label> &nbsp &nbsp &nbsp
+  <label for="veryhard">Very hard</label> &nbsp &nbsp &nbsp &nbsp
+
+
+  </br></br>
+  </div>
+  </br> </br>
+
+ <div class="panel-body" id="time_q"><b> How would you rate the time  you were given to perform the task?  </b><br/><br/>
+<input type="radio" id="timeq_lotmore" name="entry.1307459435" value="lot more">
+<label for="lotmore">I needed a lot more time</label>
+</br></br>
+<input type="radio" id="timeq_bitmore" name="entry.1307459435" value="bit more">
+<label for="bitmore">I needed a bit more time</label>
+</br></br>
+
+<input type="radio" id="timeq_perfect" name="entry.1307459435" value="perfect">
+<label for="perfect">I didn't need more time</label>
+</br></br>
+
+<input type="radio" id="timeq_bitless" name="entry.1307459435" value="bit less">
+<label for="bitless">I had a bit more time than I needed</label>
+</br></br>
+
+<input type="radio" id="timeq_lotless" name="entry.1307459435" value="lot less">
+<label for="lotless">I had a lot more time than I needed</label>
+</br></br>
+ </div>
+ 
+			
+ If you have some comments on the task, or any ideas for improvement, you can write them in the box below:
+
+			 <div class="panel-body" id="feedback_q"><b>Comments? (Optional)<br />
+			<textarea cols="40" id="textcomments" name="entry.572613020" rows="5"> </textarea> <input id="hidden_html" name="saved_html_mechanism" type="hidden" value="" /> <input id="hidden_html2" name="saved_html_purpose" type="hidden" value="" /></b></div>
+			 <br />
+
+			<input name="buttonSubmit" style="font-family: Tahoma,serif; font-size: 18px" onclick = "endOfSurveyubmit()" value="submit task" type="button"></button>
+		</div>
+		
+		
+		
+		<div id="submit_cond4" style="display:none">
+			Great, you are done! <br />
+			Before submitting the task, we would appreciate it if you could answer these questions:.
+			<br />
+  </br></br>
+  <div class="panel-body" id="Familiarity_cond4"><b> Before starting this task, how familiar were you with existing solutions to the problem presented to you? </b><br/> <br/>
+			&nbsp &nbsp &nbsp <input type="radio" id="famil_veryfamiliar_c4" name="entry.910441527" value="very familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+  
+		&nbsp <input type="radio" id="famil_somewhatfamil_c4" name="entry.910441527" value="somewhat familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+
+			<input type="radio" id="famil_neutral_c4" name="entry.910441527" value="neutral">&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+		  
+		<input type="radio" id="famil_notsofamil_c4" name="entry.910441527" value="notso familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+		  
+		<input type="radio" id="famil_notatallfamil_c4" name="entry.910441527" value="notatall familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+		</br> 
+		<label for="very familiar">Very familiar</label> &nbsp &nbsp &nbsp
+		  <label for="somewhat familiar">Somewhat familiar</label> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+		<label for="neutral">Neutral</label> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+		<label for="notso familiar">Not so familiar</label> &nbsp &nbsp &nbsp &nbsp &nbsp
+		  <label for="notatall familiar">Not familiar at all</label> &nbsp &nbsp &nbsp &nbsp
+  
+
+  </div>
+  
+  </br>
+  
+    <div class="panel-body" id="hardq_c4"><b> How hard did you find this task?  </b><br /><br/>
+	<input type="radio" id="veryeasy_c4" name="entry.1094765590" value="very easy"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+  
+<input type="radio" id="fairlyeasy_c4" name="entry.1094765590" value="fairly easy"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+
+	<input type="radio" id="moderate_c4" name="entry.1094765590" value="moderate">&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+  
+<input type="radio" id="fairlyhard_c4" name="entry.1094765590" value="fairly hard"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+  
+<input type="radio" id="veryhard_c4" name="entry.1094765590" value="very hard"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+</br> 
+<label for="very easy">Very easy</label> &nbsp &nbsp
+  <label for="fairlyeasy">Fairly easy</label> &nbsp &nbsp
+<label for="moderate">Moderate</label> &nbsp &nbsp
+<label for="fairlyhard">Fairly hard</label> &nbsp &nbsp &nbsp &nbsp &nbsp
+  <label for="veryhard">Very hard</label> &nbsp &nbsp &nbsp &nbsp
+</div>
+
+</br> </br>
+
+ <div class="panel-body" id="timeq_c4"><b> How would you rate the time  you were given to perform the task?  </b><br />
+<input type="radio" id="lotmore_c4" name="entry.1307459435" value="lot more">
+<label for="lotmore">I needed a lot more time</label>
+</br></br>
+<input type="radio" id="bitmore_c4" name="entry.1307459435" value="bit more">
+<label for="bitmore">I needed a bit more time</label>
+</br></br>
+
+<input type="radio" id="perfect_c4" name="entry.1307459435" value="perfect">
+<label for="perfect">I didn't need more time</label>
+</br></br>
+
+<input type="radio" id="bitless_c4" name="entry.1307459435" value="bit less">
+<label for="bitless">I had a bit more time than I needed</label>
+</br></br>
+
+<input type="radio" id="lotless_c4" name="entry.1307459435" value="lot less">
+<label for="lotless">I had a lot more time than I needed</label>
+</br></br>
+ </div>
+
+  </br>
+  If you have some comments on the task, or any ideas for improvement, you can write them in the box below:
+			<div class="panel-body" id="feedback_q_c4"><b>Comments? (Optional)<br />
+			<textarea cols="40" id="textcomments_c4" name="entry.2124812402" rows="5"> </textarea> <input id="hidden_html" name="saved_html_mechanism" type="hidden" value="" /> <input id="hidden_html2" name="saved_html_purpose" type="hidden" value="" /></b></div>
+			 <br />
+  </br>
+
+  
+			
+			<input name="buttonSubmit" style="font-family: Tahoma,serif; font-size: 18px" onclick = "endOfSurveyubmit()" value="submit task" type="button"></button>
+		
+		</div>
+		
+		
+			<div class="row">
+
+<style type="text/css">.container {
+    font-family:Arial,serif;
+    background-color: white;
+    margin: 10px 1px 5px 10px;
+    padding-left:0px;
+    padding-right:70px;
+  }
+
+  p.uppercase {
+    text-transform:uppercase;
+  }
+
+  .numberCircle {
+      -webkit-border-radius: 750px;
+      -moz-border-radius: 750px;
+      border-radius: 500px;
+      behavior: url(PIE.htc);
+
+      width: 20px;
+      height: 18px;
+      padding: 2px;
+
+      background:paleturquoise ;
+      text-align: center;
+
+      font: 14px Arial, sans-serif;
+
+  }
+
+  div.scrollable {
+    width: 100%;
+	height: 500px;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+}
+			</style>
+			<div class="row" id="workContent">
+			<div class="col-xs-12 col-md-6 col-md-offset-3"><!-- End input from Worker --></div>
+			</div>
+			<!-- End Survey Link Layout --></td>
+		</tr>
+	</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+</form>
+
+<!-- Please note that Bootstrap CSS/JS and JQuery are 3rd party libraries that may update their url/code at any time. Amazon Mechanical Turk (MTurk) is including these libraries as a default option for you, but is not responsible for any changes to the external libraries --><!-- External CSS references -->
+
+<!--<link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" integrity="sha384-IS73LIqjtYesmURkDE9MXKbXqYA8rvKEp/ghicjem7Vc3mGRdQRptJSz60tvrB6+" rel="stylesheet" />&lt;!&ndash; Open internal style sheet &ndash;&gt;-->
+<style type="text/css">#collapseTrigger{
+  color:#fff;
+  display: block;
+  text-decoration: none;
+}
+#submitButton{
+  white-space: normal;
+}
+.image{
+  margin-bottom: 15px;
+}
+/* CSS for breaking long words/urls */
+.dont-break-out {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  -ms-word-break: break-all;
+  word-break: break-all;
+  word-break: break-word;
+  -ms-hyphens: auto;
+  -moz-hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+mark {
+  background-color: red;
+  color: black;
+}
+</style>
+<!-- Close internal style sheet --><!-- External JS references -->
+<script src="https://code.jquery.com/jquery-3.1.0.min.js"   integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s="   crossorigin="anonymous"></script><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js" integrity="sha384-s1ITto93iSMDxlp/79qhWHi+LsIi9Gx6yL+cOKDuymvihkfol83TYbLbOw+W/wv4" crossorigin="anonymous">
+
+</script><!-- Open internal javascript -->
