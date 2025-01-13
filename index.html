@@ -40,7 +40,9 @@ var number_to_cond = {1: 'cond_1', 2: 'cond_2', 3: 'cond_3', 4: 'cond_4'}
 var new_to_old_cond_mapping = {'graph_1': 'cond_1', 'graph_2': 'cond_2', 'graph_3': 'cond_3', 'graph_4': 'cond_4'}
 
 var stepsNames= ['pre','instructions','random'];
-var problems_mapping = {'problem1': 'Dry wet floor','problem2': 'Folding laundry'}
+var problems_mapping = {'problem1': 'Remind taking medicine','problem2': 'Folding laundry'}
+var reverse_problem_mapping = {"Remind taking medicine": "problem1", "Folding laundry": "problem2"}
+var cond_to_cond_mapping = {"cond_1": "cond1", "cond_2":"cond2", "cond_3":"cond3", "cond_4" : "cond4"}
 
 var possible_problems = ['problem1', 'problem2'] // TODO here we need to add the problem that we want in the first part of the experiment
 var possible_versions = ['v_1','v_2','v_3','v_4']
@@ -132,9 +134,34 @@ var versions_mapping = {'v_1': ['graph_1'],
         resolve([all_possible_problems, problem_map]);
       })
       .catch(function(error) {
-        reject(error);
+	  alert("error in getting the data");
+	  reject(error);
       });
   });
+}
+
+
+function incrementCondition(problemId, conditionId) {
+    // Get reference to the specific condition
+    var conditionRef = database.ref(`${problemId}/${conditionId}`);
+    
+    // Get current value and update it
+    conditionRef.once('value').then(function(snapshot) {
+        var currentValue = snapshot.val() || 0;
+        
+        // Create update object
+        var updates = {};
+        updates[`${problemId}/${conditionId}`] = currentValue + 1;
+        
+        // Update the database
+        return database.ref().update(updates);
+    }).then(function() {
+        console.log(`Successfully updated ${problemId} condition ${conditionId}`);
+        return true;
+    }).catch(function(error) {
+        console.error('Error updating condition:', error);
+        return false;
+    });
 }
 
 async function sample_condition_problem(){
@@ -148,9 +175,8 @@ async function sample_condition_problem(){
 		var chosen_cond_number = problem_map[chosen_problem][random_number_condition_version];
 		
 		chosen_condition = number_to_cond[chosen_cond_number];
-		
-		alert(chosen_condition);
-		alert(chosen_problem);
+		//alert(chosen_condition);
+		//alert(chosen_problem);
 		writeToLogger("Chosen problem: " + chosen_problem + '\n');
 
 		writeToLogger("Chosen condition: " + chosen_condition + '\n');
@@ -189,10 +215,10 @@ main();
 
 
 const numOfSecondsSelfPart = 80; // 120
-const numOfSecondsInspirationPart = 30; //480 todo - change this to see
+const numOfSecondsInspirationPart = 200; //480 todo - change this to see
 
-var totalSecondsSelfAnswer = 80; // 120
-var totalSecondsWithInspiration = 30; //480 todo - change this to see effect on times, table snapshot
+var totalSecondsSelfAnswer = 900; // 120
+var totalSecondsWithInspiration = 900; //480 todo - change this to see effect on times, table snapshot
 // var curr_graph_url_problem;
 
 	function showInspirationBlankLinesAccordingToPhase(cond){
@@ -204,6 +230,7 @@ var totalSecondsWithInspiration = 30; //480 todo - change this to see effect on 
 		}
 		else {
 			let section_number = section+1
+			updateTable(chosen_problem);
 			logCurrentTime("section " + section_number.toString() + " part 2 - answers")
 			document.getElementById("inspiration_solutions_section" + section_number.toString()).style.display ="block";
 			document.getElementById("inspiration_box_section_" + section_number.toString()).style.display ="block";
@@ -229,7 +256,6 @@ var totalSecondsWithInspiration = 30; //480 todo - change this to see effect on 
 		document.getElementById("cond_3").style.display ="none"
 		document.getElementById("cond_1").style.display ="none"
 		document.getElementById("cond_4").style.display ="none"
-		alert(chosen_condition);
 		// show the correct section
 		document.getElementById(chosen_condition).style.display ="block"
 		console.log(chosen_condition)
@@ -242,11 +268,13 @@ var totalSecondsWithInspiration = 30; //480 todo - change this to see effect on 
 			document.getElementById("inspiration_box_" + (section+1).toString() + "_text_line").style.display = "block"
 		}
 		if (chosen_condition === "cond_2"){
+			alert("./graph_files/" + chosen_problem + "/" + condition_num_to_type["cond_2"]);
 			logCurrentTime("section " + (section+1).toString() + " part 2 - cond_2 setting")
 			console.log("cond_2_" + (section+1).toString())
 			let cond_element = document.getElementById("cond_2_" + (section+1).toString())
 			cond_element.style.display = "block"
 			cond_element.lastChild.attributes.src.value = "./graph_files/" + chosen_problem + "/" + condition_num_to_type["cond_2"]
+			
 			document.getElementById("inspiration_box_" + (section+1).toString() + "_links_line").style.display = "block"
 		}
 		if (chosen_condition === "cond_1"){
@@ -278,7 +306,6 @@ window.onload = function() {document.getElementById('submitButton'); }
 			//let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
 			//let dateTime = date + ' ' + time;
 			//getting the inforformation from the table entries
-			alert(chosen_condition);
 			let str = "";
 			for (let i=0; i < 10; i++){ //going over all 10 table rows
 				let str_idx = (i+1).toString()
@@ -286,35 +313,38 @@ window.onload = function() {document.getElementById('submitButton'); }
 				
 				if (chosen_condition == "cond_4")
 				{
-					str += ": solution" + str_idx + ": " + document.getElementById('self_solution_1_'+str_idx).value
-				str += ": explanation" + str_idx + ": " + document.getElementById('self_inspiration_explain_1_'+str_idx).value
+					str += ": solution" + str_idx + ": " + document.getElementById('self_solution_1_'+str_idx).value;
+				str += ": explanation" + str_idx + ": " + document.getElementById('self_inspiration_explain_1_'+str_idx).value;
 				str += "\n"
 				}
 				else{
-				str += ": solution" + str_idx + ": " + document.getElementById('inspiration_solution_1_'+str_idx).value
-				str += ": explanation" + str_idx + ": " + document.getElementById('inspiration_explain_1_'+str_idx).value
-				str += ": source" + str_idx + ": " + document.getElementById('inspiration_source_1_'+str_idx).value
-				str += "\n"
+				str += ": solution" + str_idx + ": " + document.getElementById('inspiration_solution_1_'+str_idx).value;
+				str += ": explanation" + str_idx + ": " + document.getElementById('inspiration_explain_1_'+str_idx).value;
+				str += ": source1: " + document.getElementById('inspiration_source_'+str_idx+'_1').value;
+				str += ": source2: " + document.getElementById('inspiration_source_'+str_idx+'_2').value;
+				str += ": source3: " + document.getElementById('inspiration_source_'+str_idx+'_3').value;
+				str += "\n";
+				
 				
 				}
 			
 			}
 			//add the "more" section
 			
-			if (chosen_condition == "cond_4"){
-			str += "more entry: "
-			str += "solution more: " + document.getElementById('more_self_solutions_1').value
-				str += "explanation more: " + document.getElementById('more_self_inspiration_explain_1').value
+			//if (chosen_condition == "cond_4"){
+			//str += "more entry: "
+			//str += "solution more: " + document.getElementById('more_self_solutions_1').value
+				//str += "explanation more: " + document.getElementById('more_self_inspiration_explain_1').value
 
-				str += "\n"
-			}
-			else {
-			str += "solution more: " + document.getElementById('more_inspiration_solutions_1').value
-				str += "explanation more: " + document.getElementById('more_inspiration_explain_1').value
-				str += "inspiration more: " + document.getElementById('more_inspiration_source_1').value
-				str += "\n"
+				//str += "\n"
+			//}
+			//else {
+			//str += "solution more: " + document.getElementById('more_inspiration_solutions_1').value
+				//str += "explanation more: " + document.getElementById('more_inspiration_explain_1').value
+				//str += "inspiration more: " + document.getElementById('more_inspiration_source_1').value
+				//str += "\n"
 				
-			}
+			//}
 			writeToTableLogger("table state after " + time_in_seconds + " seconds: " + str + "---$$$---");
 
 			
@@ -326,7 +356,6 @@ window.onload = function() {document.getElementById('submitButton'); }
 	function endOfSurveyubmit(){
 	//alert("called the function");
 	var all_fine = 0;
-	alert(chosen_condition);
 	if (chosen_condition != "cond_4")
 	{
 		if (!(document.getElementById('helpful_no').checked || document.getElementById('helpful_yes').checked)) {
@@ -413,7 +442,7 @@ window.onload = function() {document.getElementById('submitButton'); }
 	
 	if (all_fine == 0){
 		//try to put the comment submittance here, or try to recreate it
-	
+		incrementCondition(reverse_problem_mapping[chosen_problem], cond_to_cond_mapping[chosen_condition]);
 		document.getElementById("endOfTaskForm").submit();	
 	}
 	else
@@ -459,7 +488,6 @@ window.onload = function() {document.getElementById('submitButton'); }
 		    phaseName= stepsNames[step-1]
 		    document.getElementById("pre").style.display ="block";
 			document.getElementById("instructions").style.display ="none";
-			alert(chosen_condition);
 			if (chosen_condition === 'cond_1') {
 				document.getElementById("instructions_cond1").style.display ="none";}
 			if (chosen_condition === 'cond_2'){
@@ -492,7 +520,6 @@ window.onload = function() {document.getElementById('submitButton'); }
 		    phaseName= stepsNames[step+1]
 		    document.getElementById("pre").style.display ="none";
 			showSection("instructions");
-			alert(chosen_condition);
 			if (chosen_condition === 'cond_1') {
 				showSection("instructions_cond1");}
 			if (chosen_condition === 'cond_2'){
@@ -527,7 +554,6 @@ window.onload = function() {document.getElementById('submitButton'); }
 			document.documentElement.scrollTop = 0;
 		    phaseName= stepsNames[step+1]
 			document.getElementById("instructions").style.display ="none";
-			alert(chosen_condition);
 			if (chosen_condition === 'cond_1') {
 				document.getElementById("instructions_cond1").style.display ="none";
 				}
@@ -552,7 +578,6 @@ window.onload = function() {document.getElementById('submitButton'); }
 			document.documentElement.scrollTop = 0;
 		    phaseName= stepsNames[step+1]
 		    document.getElementById("instructions2").style.display ="none";
-			alert(chosen_condition);
 			document.getElementById("banner").innerHTML = "Find solutions using an inspiration source"
 			if (chosen_condition === 'cond_4'){
 				document.getElementById("banner").innerHTML = "Find solutions yourself"
@@ -563,7 +588,6 @@ window.onload = function() {document.getElementById('submitButton'); }
 	}
 
 	function showInspirationSection(cond){
-			alert("shpow inspiration");
 			document.getElementById('scroll_inspiration_solutions').scrollTop = 0;
 			showSection("inspiration_based_solutions_blank_lines")
 			document.getElementById("task_chosen_problem").innerHTML = chosen_problem;
@@ -597,7 +621,6 @@ function submitTask(){
 
 	// show submit elements
 	document.getElementById("banner").innerHTML = "Short survey"
-	alert(chosen_condition);
 	if (chosen_condition == "cond_4"){
 		document.getElementById("submit_cond4").style.display ="block";
 	}
@@ -919,9 +942,8 @@ Statements related to this problem:<br/>
 		During this task, you will be asked to fill in a table with
 		(1) your <font color="#006400"><b>original solutions</b></font>,
 		(2) an <b>explanation of what you were inspired by</b>, and
-		(3) the inspiration source id (the number in <font color="red"><b> red </b></font>).
-		(Inspirations have id numbers assigned to them).
-		In case you didn't use an inspiration source for your solution, write <b> ME </b> in the inspiration id column .
+		(3) the inspiration source id (Inspirations have id numbers assigned to them - the number in <font color="red"><b> red </b></font>). You can select up to 3 inspiration sources for each idea. </br>
+		In case you didn't use an inspiration source for your solution, select <b> My idea </b> in the first inspiration id column .
 		<br/>
 		<br/>
 		</div>
@@ -969,48 +991,149 @@ Statements related to this problem:<br/>
 		</table>
 		</div>
 		<div id="example_solutions_inspirations_cond123" style="display:block">
-		<table style="border: 1px solid black">
-		<tbody>
-		<tr style="border:2px solid #aaa;">
-		<td colspan="1" width="40%">
-		Solution 1:<br/><textarea style="color: royalblue;width:100%" id="example_1" name="example_1" rows="3">A heating hat: a hat with a heating mechanism that you put on top of your head.</textarea><br />
-		</td>
-		<td colspan="2" width="40%">
-		What inspired you 1:<br/><textarea style="color: royalblue;width:100%" id="example_insp_1" name="example_insp_1" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result with the hair drying faster.</textarea><br />
-		</td>
-		<td colspan="1" width="20%">
-		Inspiration id 1:<br/><textarea style="color: royalblue;width:50%; margin-left:10" id="example_insnp_num_1" name="example_insnp_num_1" rows="3">ME</textarea><br />
-		</td>
-		</tr>
-		<tr style="border:2px solid #aaa;">
-		<td colspan="1" width="40%">
-		Solution 2:<br/><textarea style="color: royalblue;width:100%" id="example_2" name="example_1" rows="3">A hair spray that has drying qualities</textarea><br />
-		</td>
-		<td colspan="2" width="40%">
-		What inspired you 2:<br/><textarea style="color: royalblue;width:100%" id="example_insp_2" name="example_insp_2" rows="3">I was inspired by a nail polish drying spray: you spray it on your nails and the nail polish dries faster.</textarea><br />
-		</td>
-		<td colspan="2" width="20%">
-		Inspiration id 2:<br/><textarea style="color: royalblue;width:50%; margin-left:10" id="example_insnp_num_2" name="example_insnp_num_2" rows="3">2</textarea><br />
-		</td>
-		</tr>
-		<tr style="border:2px solid #aaa;">
-		<td colspan="1" width="20%">
-		Solution 3:<br/><textarea style="color: royalblue;width:100%" id="example_3" name="example_1" rows="3">Hair drying machine: a machine that spins your hair until it is dry
-</textarea><br />
-		<br />
-		</td>
-		<td colspan="2" width="40%">
-		What inspired you 3:<br/><textarea style="color: royalblue;width:100%" id="example_insp_3" name="example_insp_3" rows="3">A dryer spins the clothes to dry them. I thought that maybe a similar idea can work for hair
-</textarea><br />
-		<br />
-		</td>
-		<td colspan="2" width="40%">
-		Inspiration id 3:<br/><textarea style="color: royalblue;width:50%; margin-left:10" id="example_insnp_num_3" name="example_insnp_num_3" rows="3">1</textarea><br />
-		<br />
-		</td>
-		</tr>
-		</tbody>
-		</table>
+		<style>
+  .example-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid black;
+  }
+  .example-table td {
+    padding: 10px;
+    vertical-align: top;
+    width: 33.33%;
+  }
+  .example-row {
+    border: 2px solid #aaa;
+  }
+  .inspiration-sources {
+    display: flex;
+    gap: 10px;
+  }
+  .inspiration-sources > div {
+    flex: 1;
+  }
+  textarea {
+    width: 100%;
+    margin-bottom: 10px;
+    color: royalblue;
+    resize: vertical;
+  }
+  select {
+    width: 100%;
+    color: royalblue;
+    margin-bottom: 10px;
+    padding: 5px;
+  }
+  label {
+    display: inline-block;
+    margin-bottom: 5px;
+  }
+</style>
+		<table class="example-table">
+    <tbody>
+      <!-- Row 1 -->
+      <tr class="example-row">
+        <td>
+          <label>Solution:</label><br>
+          <textarea id="example_1" name="example_1" rows="3">A heating hat: a hat with a heating mechanism that you put on top of your head.</textarea>
+        </td>
+        <td>
+          <label>What inspired you:</label><br>
+          <textarea id="example_insp_1" name="example_insp_1" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result with the hair drying faster.</textarea>
+        </td>
+        <td>
+          <div class="inspiration-sources">
+            <div>
+              <label style="display: inline-block">Inspiration id 1:</label><br>
+              <select id="example_insp_num_1_1" name="example_insp_num_1_1">
+                <option value="ME" selected>My idea</option>
+              </select>
+            </div>
+            <div>
+              <label>Inspiration id 2 (Optional):</label><br>
+              <select id="example_insp_num_1_2" name="example_insp_num_1_2">
+                <option value="Select Option" selected>-----</option>
+              </select>
+            </div>
+            <div>
+              <label>Inspiration id 3 (Optional):</label><br>
+              <select id="example_insp_num_1_3" name="example_insp_num_1_3">
+                <option value="Select Option" selected>-----</</option>
+              </select>
+            </div>
+          </div>
+        </td>
+      </tr>
+
+      <!-- Row 2 -->
+      <tr class="example-row">
+        <td>
+          <label>Solution:</label><br>
+          <textarea id="example_2" name="example_2" rows="3">A hair spray that has drying qualities</textarea>
+        </td>
+        <td>
+          <label>What inspired you:</label><br>
+          <textarea id="example_insp_2" name="example_insp_2" rows="3">I was inspired by a nail polish drying spray: you spray it on your nails and the nail polish dries faster.</textarea>
+        </td>
+        <td>
+          <div class="inspiration-sources">
+            <div>
+              <label style="display: inline-block">Inspiration id 1:</label><br>
+              <select id="example_insp_num_2_1" name="example_insp_num_2_1">
+                <option value="2. Drying nail polish" selected>2. Drying nail polish</option>
+              </select>
+            </div>
+            <div>
+              <label>Inspiration id 2 (Optional):</label><br>
+              <select id="example_insp_num_2_2" name="example_insp_num_2_2">
+                <option value="Select Option" selected>-----</</option>
+              </select>
+            </div>
+            <div>
+              <label>Inspiration id 3 (Optional):</label><br>
+              <select id="example_insp_num_2_3" name="example_insp_num_2_3">
+                <option value="Select Option" selected>-----</</option>
+              </select>
+            </div>
+          </div>
+        </td>
+      </tr>
+
+      <!-- Row 3 -->
+      <tr class="example-row">
+        <td>
+          <label>Solution:</label><br>
+          <textarea id="example_3" name="example_3" rows="3">Hair drying machine: a machine that spins your hair until it is dry</textarea>
+        </td>
+        <td>
+          <label>What inspired you:</label><br>
+          <textarea id="example_insp_3" name="example_insp_3" rows="3">A dryer spins the clothes to dry them. I thought that maybe a similar idea can work for hair</textarea>
+        </td>
+        <td>
+          <div class="inspiration-sources">
+            <div>
+              <label style="display: inline-block">Inspiration id 1:</label><br>
+              <select id="example_insp_num_3_1" name="example_insp_num_3_1">
+                <option value="1. Drying nail polish" selected>1. Drying clothes</option>
+              </select>
+            </div>
+            <div>
+              <label>Inspiration id 2 (Optional):</label><br>
+              <select id="example_insp_num_3_2" name="example_insp_num_3_2">
+                <option value="Select Option" selected>-----</option>
+              </select>
+            </div>
+            <div>
+              <label>Inspiration id 3 (Optional):</label><br>
+              <select id="example_insp_num_3_3" name="example_insp_num_3_3">
+                <option value="Select Option" selected>-----</option>
+              </select>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 		</div>
 		<br />
 		Please try to think hard and be creative!<br />
@@ -1064,34 +1187,94 @@ Statements related to this problem:<br/>
 							<p><font face="Times New Roman"><input id="stimulus1" name="stimulus2" type="hidden" value="" /></font></p>
 							<br />
 							<p align="justify">
-							After clicking on the button below, you will be presented with a problem and the inspirations. 
+							After clicking on the button below, you will be presented with a problem and the inspirations. <br>The inspirations are meant to assist you. Use them as you see fit. Specifically, you do not have to read all the inspirations before writing down your ideas.
 							<br />
-								Use the numbers on the left as the inspiration id. <br/>
+								Use the numbers on the left as the inspiration id.<br/>
 								<font color="#dc143c"><b>Do not</b></font> use any search engine or external knowledge source (you can use a dictionary).<br/>
-								Fill the the table with as many ideas as you come up with. You do not have to fill the entire table.
+								Fill the the table with as many ideas as you come up with. You do not have to fill the entire table, but try to come up with as many creative ideas as possible.
 								</br>
-								If you come up with more than 10 ideas, write all of them in the "more" entries.
+								If you come up with more than 10 ideas, write all of them in the last entry.
 							<br />
 								<br />
-							<b>Reminder: this is how you fill the table:</b>
+							<b> Reminder: this is how you fill the table:</b>
 							<br />
 
-							<div id="example_insp_solutions_links" style="display:block">
-								<table style="border: 1px solid black">
-								<tbody>
-								<tr style="border:2px solid #aaa;">
-								<td colspan="1" width="40%">
-								Solution 1:<br/><textarea style="color: royalblue;width:100%" id="example_2" name="example_1" rows="3">Leaf blower for hair</textarea><br />
-								</td>
-								<td colspan="2" width="40%">
-								What inspired you 1:<br/><textarea style="color: royalblue;width:100%" id="example_insp_2" name="example_insp_2" rows="3">I saw a text about leaf blowers. the blower circulates the air, similar to a natural wind which dries the hair</textarea><br />
-								</td>
-								<td colspan="2" width="20%">
-								Inspiration id 1:<br/><textarea style="color: royalblue;width:50%; margin-left:10" id="example_insnp_num_2" name="example_insnp_num_2" rows="3">8,5</textarea><br />
-								</td>
-								</tr>
-								</tbody>
-								</table>
+							<style>
+  .example-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid black;
+  }
+  .example-table td {
+    padding: 10px;
+    vertical-align: top;
+    width: 33.33%;
+  }
+  .example-row {
+    border: 2px solid #aaa;
+  }
+  .inspiration-sources {
+    display: flex;
+    gap: 10px;
+  }
+  .inspiration-sources > div {
+    flex: 1;
+  }
+  textarea {
+    width: 100%;
+    margin-bottom: 10px;
+    color: royalblue;
+    resize: vertical;
+  }
+  select {
+    width: 100%;
+    color: royalblue;
+    margin-bottom: 10px;
+    padding: 5px;
+  }
+  label {
+    display: inline-block;
+    margin-bottom: 5px;
+  }
+</style>
+
+<table class="example-table">
+  <tbody>
+    <tr class="example-row">
+      <td>
+        <label>Solution:</label><br>
+        <textarea id="example_2" name="example_1" rows="3">Leaf blower for hair</textarea>
+      </td>
+      <td>
+        <label>What inspired you:</label><br>
+        <textarea id="example_insp_2" name="example_insp_2" rows="3">I saw a text about leaf blowers. the blower circulates the air, similar to a natural wind which dries the hair</textarea>
+      </td>
+      <td>
+        <div class="inspiration-sources">
+          <div>
+            <label style="display: inline-block">Inspiration id 1:</label><br>
+            <select id="example_insp_num_2_1" name="example_insp_num_2_1">
+              <option value="8" selected>8. Equipment for garden maintenance</option>
+            </select>
+          </div>
+          <div>
+            <label>Inspiration id 2 (Optional):</label><br>
+            <select id="example_insp_num_2_2" name="example_insp_num_2_2">
+              <option value="5" selected>5. Blowing leafs</option>
+            </select>
+          </div>
+          <div>
+            <label>Inspiration id 3 (Optional):</label><br>
+            <select id="example_insp_num_2_3" name="example_insp_num_2_3">
+              <option value="Select Option" selected>-----</option>
+
+            </select>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
 							</div>
 							<br />
 							<br />
@@ -1106,34 +1289,95 @@ Statements related to this problem:<br/>
 							<br />
 							<p align="justify">
 							
-							After clicking on the button below, you will be presented with a problem and the inspirations. 
+							After clicking on the button below, you will be presented with a problem and the inspirations. <br>The inspirations are meant to assist you. Use them as you see fit. Specifically, you do not have to read all the inspirations before writing down your ideas.
 							<br />
 								Use the numbers on the left as the inspiration id.<br/>
 								<font color="#dc143c"><b>Do not</b></font> use any search engine or external knowledge source (you can use a dictionary).<br/>
-								Fill the the table with as many ideas as you come up with. You do not have to fill the entire table.
+								Fill the the table with as many ideas as you come up with. You do not have to fill the entire table, but try to come up with as many creative ideas as possible.
 								</br>
-								If you come up with more than 10 ideas, write all of them in the "more" entries.
+								If you come up with more than 10 ideas, write all of them in the last entry.
 							<br />
 								<br />
 							<b> Reminder: this is how you fill the table:</b>
 							<br />
 
 							<div id="example_insp_solutions_texts" style="display:block">
-								<table style="border: 1px solid black">
-								<tbody>
-								<tr style="border:2px solid #aaa;">
-								<td colspan="1" width="40%">
-								Solution 1:<br/><textarea style="color: royalblue;width:100%" id="example_2" name="example_1" rows="3">Leaf blower for hair</textarea><br />
-								</td>
-								<td colspan="2" width="40%">
-								What inspired you 1:<br/><textarea style="color: royalblue;width:100%" id="example_insp_2" name="example_insp_2" rows="3">I saw a text about leaf blowers. the blower circulates the air, similar to a natural wind which dries the hair</textarea><br />
-								</td>
-								<td colspan="2" width="20%">
-								Inspiration id 1:<br/><textarea style="color: royalblue;width:50%; margin-left:10" id="example_insnp_num_2" name="example_insnp_num_2" rows="3">8,5</textarea><br />
-								</td>
-								</tr>
-								</tbody>
-								</table>
+								<style>
+  .example-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid black;
+  }
+  .example-table td {
+    padding: 10px;
+    vertical-align: top;
+    width: 33.33%;
+  }
+  .example-row {
+    border: 2px solid #aaa;
+  }
+  .inspiration-sources {
+    display: flex;
+    gap: 10px;
+  }
+  .inspiration-sources > div {
+    flex: 1;
+  }
+  textarea {
+    width: 100%;
+    margin-bottom: 10px;
+    color: royalblue;
+    resize: vertical;
+  }
+  select {
+    width: 100%;
+    color: royalblue;
+    margin-bottom: 10px;
+    padding: 5px;
+  }
+  label {
+    display: inline-block;
+    margin-bottom: 5px;
+  }
+</style>
+
+<table class="example-table">
+  <tbody>
+    <tr class="example-row">
+      <td>
+        <label>Solution:</label><br>
+        <textarea id="example_2" name="example_1" rows="3">Leaf blower for hair</textarea>
+      </td>
+      <td>
+        <label>What inspired you:</label><br>
+        <textarea id="example_insp_2" name="example_insp_2" rows="3">I saw a text about leaf blowers. the blower circulates the air, similar to a natural wind which dries the hair</textarea>
+      </td>
+      <td>
+        <div class="inspiration-sources">
+          <div>
+            <label style="display: inline-block">Inspiration id 1:</label><br>
+            <select id="example_insp_num_2_1" name="example_insp_num_2_1">
+              <option value="8" selected>8. Equipment for garden maintenance</option>
+            </select>
+          </div>
+          <div>
+            <label>Inspiration id 2 (Optional):</label><br>
+            <select id="example_insp_num_2_2" name="example_insp_num_2_2">
+              <option value="5" selected>5. Blowing leafs</option>
+            </select>
+          </div>
+          <div>
+            <label>Inspiration id 3 (Optional):</label><br>
+            <select id="example_insp_num_2_3" name="example_insp_num_2_3">
+              <option value="Select Option" selected>-----</option>
+
+            </select>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
 							</div>
 							<br />
 							<br />
@@ -1146,34 +1390,95 @@ Statements related to this problem:<br/>
 							<p><font face="Times New Roman"><input id="stimulus3" name="stimulus3" type="hidden" value="" /></font></p>
 							<br />
 							<p align="justify">
-							After clicking on the button below, you will be presented with a problem and the inspirations. 
+							After clicking on the button below, you will be presented with a problem and the inspirations. <br>The inspirations are meant to assist you. Use them as you see fit. Specifically, you do not have to read all the inspirations before writing down your ideas.
 							<br />
 								Use the numbers on the left as the inspiration id.<br/>
 								<font color="#dc143c"><b>Do not</b></font> use any search engine or external knowledge source (you can use a dictionary).<br/>
-								Fill the the table with as many ideas as you come up with. You do not have to fill the entire table.
+								Fill the the table with as many ideas as you come up with. You do not have to fill the entire table, but try to come up with as many creative ideas as possible.
 								</br>
-								If you come up with more than 10 ideas, write all of them in the "more" entries.
+								If you come up with more than 10 ideas, write all of them in the last entry.
 							<br />
 								<br />
-							<b>Reminder: this is how you fill the table:</b>
+							<b> Reminder: this is how you fill the table:</b>
 							<br />
 
 							<div id="example_insp_solutions_engine" style="display:block">
-								<table style="border: 1px solid black">
-								<tbody>
-								<tr style="border:2px solid #aaa;">
-								<td colspan="1" width="40%">
-								Solution 1:<br/><textarea style="color: royalblue;width:100%" id="example_2" name="example_1" rows="3">Leaf blower for hair</textarea><br />
-								</td>
-								<td colspan="2" width="40%">
-								What inspired you 1:<br/><textarea style="color: royalblue;width:100%" id="example_insp_2" name="example_insp_2" rows="3">I saw a text about leaf blowers. the blower circulates the air, similar to a natural wind which dries the hair</textarea><br />
-								</td>
-								<td colspan="2" width="20%">
-								Inspiration id 1</font>:<br/><textarea style="color: royalblue;width:50%; margin-left:10" id="example_insnp_num_2" name="example_insnp_num_2" rows="3">8,5</textarea><br />
-								</td>
-								</tr>
-								</tbody>
-								</table>
+								<style>
+  .example-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid black;
+  }
+  .example-table td {
+    padding: 10px;
+    vertical-align: top;
+    width: 33.33%;
+  }
+  .example-row {
+    border: 2px solid #aaa;
+  }
+  .inspiration-sources {
+    display: flex;
+    gap: 10px;
+  }
+  .inspiration-sources > div {
+    flex: 1;
+  }
+  textarea {
+    width: 100%;
+    margin-bottom: 10px;
+    color: royalblue;
+    resize: vertical;
+  }
+  select {
+    width: 100%;
+    color: royalblue;
+    margin-bottom: 10px;
+    padding: 5px;
+  }
+  label {
+    display: inline-block;
+    margin-bottom: 5px;
+  }
+</style>
+
+<table class="example-table">
+  <tbody>
+    <tr class="example-row">
+      <td>
+        <label>Solution:</label><br>
+        <textarea id="example_2" name="example_1" rows="3">Leaf blower for hair</textarea>
+      </td>
+      <td>
+        <label>What inspired you:</label><br>
+        <textarea id="example_insp_2" name="example_insp_2" rows="3">I saw a text about leaf blowers. the blower circulates the air, similar to a natural wind which dries the hair</textarea>
+      </td>
+      <td>
+        <div class="inspiration-sources">
+          <div>
+            <label style="display: inline-block">Inspiration id 1:</label><br>
+            <select id="example_insp_num_2_1" name="example_insp_num_2_1">
+              <option value="8" selected>8. Equipment for garden maintenance</option>
+            </select>
+          </div>
+          <div>
+            <label>Inspiration id 2 (Optional):</label><br>
+            <select id="example_insp_num_2_2" name="example_insp_num_2_2">
+              <option value="5" selected>5. Blowing leafs</option>
+            </select>
+          </div>
+          <div>
+            <label>Inspiration id 3 (Optional):</label><br>
+            <select id="example_insp_num_2_3" name="example_insp_num_2_3">
+              <option value="Select Option" selected>-----</option>
+
+            </select>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
 							</div>
 							<br />
 							<br />
@@ -1259,58 +1564,113 @@ Statements related to this problem:<br/>
 						<div class="scrollable" id="scroll_inspiration_solutions"><b>Your solutions & Inspirations:</b>
 						<br />
 
-						<div id="inspiration_solutions_section1" style="display:block">
-						<br />
-						<table>
-						<tbody>
-						<tr style="border:2px solid #aaa;">
-						<td colspan="1" width="40%">
-						Solution 1:<br /><textarea style="width:100%" id="inspiration_solution_1_1" name="entry.314622552" rows="3"></textarea><br />
-						Solution 2:<br /><textarea style="width:100%" id="inspiration_solution_1_2" name="entry.1009268483" rows="3"></textarea><br />
-						Solution 3:<br /><textarea style="width:100%" id="inspiration_solution_1_3" name="entry.685221619" rows="3"></textarea><br />
-						Solution 4:<br /><textarea style="width:100%" id="inspiration_solution_1_4" name="entry.280201648" rows="3"></textarea><br />
-						Solution 5:<br /><textarea style="width:100%" id="inspiration_solution_1_5" name="entry.1697104374" rows="3"></textarea><br />
-						Solution 6:<br /><textarea style="width:100%"id="inspiration_solution_1_6" name="entry.2132214692" rows="3"></textarea><br />
-						Solution 7:<br /><textarea style="width:100%" id="inspiration_solution_1_7" name="entry.1620257989" rows="3"></textarea><br />
-						Solution 8:<br /><textarea style="width:100%" id="inspiration_solution_1_8" name="entry.329613343" rows="3"></textarea><br />
-						Solution 9:<br /><textarea style="width:100%" id="inspiration_solution_1_9" name="entry.1299464159" rows="3"></textarea><br />
-						Solution 10:<br /><textarea style="width:100%" id="inspiration_solution_1_10" name="entry.2087526347" rows="3"></textarea><br />
-						More solutions:<br /><textarea style="width:100%" id="more_inspiration_solutions_1" name="entry.1076502473" rows="3"></textarea><br />
-						<br />
-						</td>
-						<td id="explain_source_1" colspan="1" width="40%">
-						What inspired you 1:<br /><textarea style="width:100%" id="inspiration_explain_1_1" name="entry.231987172" rows="3"></textarea><br />
-						What inspired you 2:<br /><textarea style="width:100%" id="inspiration_explain_1_2" name="entry.2036569260" rows="3"></textarea><br />
-						What inspired you 3:<br /><textarea style="width:100%" id="inspiration_explain_1_3" name="entry.1330189626" rows="3"></textarea><br />
-						What inspired you 4:<br /><textarea style="width:100%" id="inspiration_explain_1_4" name="entry.489318433" rows="3"></textarea><br />
-						What inspired you 5:<br /><textarea style="width:100%" id="inspiration_explain_1_5" name="entry.1897412186" rows="3"></textarea><br />
-						What inspired you 6:<br /><textarea style="width:100%" id="inspiration_explain_1_6" name="entry.1435909855" rows="3"></textarea><br />
-						What inspired you 7:<br /><textarea style="width:100%" id="inspiration_explain_1_7" name="entry.179661302" rows="3"></textarea><br />
-						What inspired you 8:<br /><textarea style="width:100%" id="inspiration_explain_1_8" name="entry.221785788" rows="3"></textarea><br />
-						What inspired you 9:<br /><textarea style="width:100%" id="inspiration_explain_1_9" name="entry.2085492295" rows="3"></textarea><br />
-						What inspired you 10:<br /><textarea style="width:100%" id="inspiration_explain_1_10" name="entry.226881551" rows="3"></textarea><br />
-						What inspired you - More:<br /><textarea style="width:100%" id="more_inspiration_explain_1" name="entry.1309497841" rows="3"></textarea><br />
-						<br />
-						</td>
-						<td id="specific_source_1" colspan="1" width="40%">
-						Inspiration id 1:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_1" name="entry.2088415631" rows="3"></textarea><br />
-						Inspiration id 2:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_2" name="entry.2077441529" rows="3"></textarea><br />
-						Inspiration id 3:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_3" name="entry.311318780" rows="3"></textarea><br />
-						Inspiration id 4:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_4" name="entry.1273149936" rows="3"></textarea><br />
-						Inspiration id 5:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_5" name="entry.237667301" rows="3"></textarea><br />
-						Inspiration id 6:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_6" name="entry.1375352256" rows="3"></textarea><br />
-						Inspiration id 7:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_7" name="entry.1774926837" rows="3"></textarea><br />
-						Inspiration id 8:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_8" name="entry.640395032" rows="3"></textarea><br />
-						Inspiration id 9:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_9" name="entry.130655511" rows="3"></textarea><br />
-						Inspiration id 10:<br /><textarea style="width:50%;margin-left:10" id="inspiration_source_1_10" name="entry.1027911890" rows="3"></textarea><br />
-						More inspiration ids:<br /><textarea style="width:50%;margin-left:10" id="more_inspiration_source_1" name="entry.477282171" rows="3"></textarea><br />
-						<br />
-						</td>
-						</tr>
-						</tbody>
-						</table>
-						</div>
+						<div id="inspiration_solutions_section1" style="display:block"></div>
+						<script>
+						const dropdownValues = {
+  'Remind taking medicine': ['-----', 'My idea', '1. A system for treating low back pain ', '2. To prevent, inhibit, or treat intimal hyperplasia', '3. A method for treating or preventing erythema', '4. A topical analgesic', '5. To describe a method of treating ulcerative colitis','6. A method for treating a patient with a GPR 40 agonist','7. A treatment kit','8. to describe a new method of treating complex regional pain syndrome','9. A method for treating CML', '10. To describe a new class of compounds that have a disease-modifying... ', '11. A method for treating cancer', '12.  A method for treating neuromuscular conditions', '13. To treat methamphetamine addiction', '14. A new compound for the treatment of osteoporosis and in general of bone pathologies','15. A method of treating Dengue virus infection ','16. A method for inducing an immune response against a Her-2/neu','17. A method of treating respiratory illness','18. A method of treating chronic kidney disease,','19. To describe a method of treating corneal diseases','20. A method for promoting wound healing'],
+  'Folding laundry': ['Select Option', 'My idea', '1', '2', '3', '4', '5','6','7','8','9', '10', '11', '12', '13', '14','15','16','17','18','19','20'],
+};
 
+function updateTable(condition) {
+  const values = dropdownValues[condition];
+  const selectOptions = values.map(val => 
+    `<option value="${val}">${val}</option>`
+  ).join('');
+  
+  document.getElementById('inspiration_solutions_section1').innerHTML = `
+    <br/>
+    <style>
+      .inspiration-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 2px solid #aaa;
+      }
+      .inspiration-table td {
+        padding: 10px;
+        vertical-align: top;
+        width: 33.33%;
+      }
+      .inspiration-row {
+        border-bottom: 1px solid #eee;
+      }
+      .inspiration-sources {
+        display: flex;
+        gap: 10px;
+      }
+      .inspiration-sources > div {
+        flex: 1;
+      }
+      textarea {
+        width: 100%;
+        margin-bottom: 10px;
+        resize: vertical;
+      }
+      select {
+        width: 100%;
+        color: royalblue;
+        margin-bottom: 10px;
+        padding: 5px;
+      }
+      label {
+        display: inline-block;
+        margin-bottom: 5px;
+      }
+    </style>
+
+    <table class="inspiration-table">
+      <tbody>
+        ${Array.from({length: 10}, (_, i) => i + 1).map(rowNum => `
+          <tr class="inspiration-row">
+            <td>
+              <label>Solution:</label><br>
+              <textarea id="inspiration_solution_1_${rowNum}" name="entry.${getEntryId('solution', rowNum)}" rows="3"></textarea>
+            </td>
+            <td>
+              <label>What inspired you:</label><br>
+              <textarea id="inspiration_explain_1_${rowNum}" name="entry.${getEntryId('explain', rowNum)}" rows="3"></textarea>
+            </td>
+            <td>
+              <div class="inspiration-sources">
+                <div>
+                  <label style="display: inline-block">Inspiration id 1:</label><br>
+                  <select style="color: royalblue" id="inspiration_source_${rowNum}_1" name="entry.${getEntryId('source1', rowNum)}">
+                    ${selectOptions}
+                  </select>
+                </div>
+                <div>
+                  <label>Inspiration id 2 (Optional):</label><br>
+                  <select style="color: royalblue" id="inspiration_source_${rowNum}_2" name="entry.${getEntryId('source2', rowNum)}">
+                    ${selectOptions}
+                  </select>
+                </div>
+                <div>
+                  <label>Inspiration id 3 (Optional):</label><br>
+                  <select style="color: royalblue" id="inspiration_source_${rowNum}_3" name="entry.${getEntryId('source3', rowNum)}">
+                    ${selectOptions}
+                  </select>
+                </div>
+              </div>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// Helper function to get the correct entry IDs from your original table
+function getEntryId(type, rowNum) {
+  const entryIds = {
+    solution: ['314622552', '1009268483', '685221619', '280201648', '1697104374', '2132214692', '1620257989', '329613343', '1299464159', '2087526347'],
+    explain: ['231987172', '2036569260', '1330189626', '489318433', '1897412186', '1435909855', '179661302', '221785788', '2085492295', '226881551'],
+    source1: ['2088415631', '2077441529', '311318780', '1273149936', '237667301', '1375352256', '1774926837', '640395032', '130655511', '1027911890'],
+    source2: ['561012748', '44985646', '104785335', '1691780054', '1692000982', '253520441', '1566654564', '10794285', '384858581', '1895324335'],
+    source3: ['1242110235', '153184358', '924309875', '2089932015', '316883324', '361050005', '1460555298', '1805990914', '144163614', '1419871238']
+  };
+  
+  return entryIds[type][rowNum - 1];
+}
+					</script>
 						<div id="self_solutions_section1" style="display:block">
 						<table style="width:100%">
 						<tbody>
