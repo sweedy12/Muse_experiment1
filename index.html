@@ -40,8 +40,8 @@ var number_to_cond = {1: 'cond_1', 2: 'cond_2', 3: 'cond_3', 4: 'cond_4'}
 var new_to_old_cond_mapping = {'graph_1': 'cond_1', 'graph_2': 'cond_2', 'graph_3': 'cond_3', 'graph_4': 'cond_4'}
 
 var stepsNames= ['pre','instructions','random'];
-var problems_mapping = {'problem1': 'Remind taking medicine','problem2': 'Folding laundry'}
-var reverse_problem_mapping = {"Remind taking medicine": "problem1", "Folding laundry": "problem2"}
+var problems_mapping = {'problem1': 'Protect plants','problem2': 'Dry a wet floor'}
+var reverse_problem_mapping = {"Protect plants": "problem1", "Dry a wet floor": "problem2"}
 var cond_to_cond_mapping = {"cond_1": "cond1", "cond_2":"cond2", "cond_3":"cond3", "cond_4" : "cond4"}
 
 var possible_problems = ['problem1', 'problem2'] // TODO here we need to add the problem that we want in the first part of the experiment
@@ -217,8 +217,8 @@ main();
 const numOfSecondsSelfPart = 80; // 120
 const numOfSecondsInspirationPart = 200; //480 todo - change this to see
 
-var totalSecondsSelfAnswer = 900; // 120
-var totalSecondsWithInspiration = 900; //480 todo - change this to see effect on times, table snapshot
+var totalSecondsSelfAnswer = 10; // 120
+var totalSecondsWithInspiration = 10; //480 todo - change this to see effect on times, table snapshot
 // var curr_graph_url_problem;
 
 	function showInspirationBlankLinesAccordingToPhase(cond){
@@ -355,16 +355,39 @@ window.onload = function() {document.getElementById('submitButton'); }
 	function endOfSurveyubmit(){
 	//alert("called the function");
 	var all_fine = 0;
+	//checking for age, gender qs
+	
+	
+	
 	if (chosen_condition != "cond_4")
 	{
-		if (!(document.getElementById('helpful_no').checked || document.getElementById('helpful_yes').checked)) {
+		if (!(document.getElementById('helpful_no').checked || document.getElementById('helpful_yes').checked || document.getElementById('helpful_somewhat').checked)) {
 			//alert("helpfulq");
+			alert("helpful");
 			all_fine = 1;
 		}
 		if (!(document.getElementById('useagain_no').checked || document.getElementById('useagain_yes').checked)) {
 			//alert("useagainq");
 			all_fine = 1;
 		}
+		let a1 = document.getElementById('age_q_30').checked;
+	let b1 = document.getElementById('age_q_45').checked;
+	let c1 = document.getElementById('age_q_60').checked;
+	let d1 = document.getElementById('age_q_plus').checked;
+	if (!(a1||b1||c1||d1))
+		{	//alert("timeq");
+		//alert("age");
+			all_fine = 1;
+		}
+	 a1 = document.getElementById('gender_q_male').checked;
+	 b1 = document.getElementById('gender_q_female').checked;
+	 c1 = document.getElementById('gender_q_other').checked;
+	 d1 = document.getElementById('gender_q_prefer_not_say').checked;
+	if (!(a1||b1||c1||d1))
+		{	//alert("timeq");
+		//alert("gender");
+			all_fine = 1;
+		}	
 		let a = document.getElementById('hardq_veryeasy').checked;
 		let b = document.getElementById('hardq_fairlyeasy').checked;
 		let c = document.getElementById('hardq_moderate').checked;
@@ -399,6 +422,25 @@ window.onload = function() {document.getElementById('submitButton'); }
 		}
 	}
 	else{
+		let a1 = document.getElementById('age_q_c4_30').checked;
+	let b1 = document.getElementById('age_q_c4_45').checked;
+	let c1 = document.getElementById('age_q_c4_60').checked;
+	let d1 = document.getElementById('age_q_c4_plus').checked;
+	if (!(a1||b1||c1||d1))
+		{	//alert("timeq");
+		alert("age");
+			all_fine = 1;
+		}
+	 a1 = document.getElementById('gender_q_c4_male').checked;
+	 b1 = document.getElementById('gender_q_c4_female').checked;
+	 c1 = document.getElementById('gender_q_c4_other').checked;
+	 d1 = document.getElementById('gender_q_c4_prefer_not_say').checked;
+	if (!(a1||b1||c1||d1))
+		{	//alert("timeq");
+		alert("gender");
+			all_fine = 1;
+		}	
+	
 		let a = document.getElementById('famil_veryfamiliar_c4').checked;
 		let b = document.getElementById('famil_notatallfamil_c4').checked;
 		let c = document.getElementById('famil_neutral_c4').checked;
@@ -763,22 +805,22 @@ function myTimerInspirationAnswer() {
 		<tbody>
 		<tr style="border:2px solid #aaa;">
 		<td colspan="1" width="40%">
-		<font color="#006400"><b>Solution 1</b></font>:<br/><textarea style="color: royalblue" width="100%" id="example_1" name="example_1" rows="3">Hair drying machine: a machine that spins your hair until it is dry</textarea><br /> </td>
+		<font color="#006400"><b>Solution</b></font>:<br/><textarea style="color: royalblue" width="100%" id="example_1" name="example_1" rows="3">Hair drying machine: a machine that spins your hair until it is dry</textarea><br /> </td>
 		<td colspan="1" width="40%">
-		<font color="#006400">Solution 2</font>:<br/><textarea style="color: royalblue" width="100%" id="example_2" name="example_1" rows="3">A hair spray that has drying qualities</textarea><br />
+		<font color="#006400">Solution</font>:<br/><textarea style="color: royalblue" width="100%" id="example_2" name="example_1" rows="3">A hair spray that has drying qualities</textarea><br />
 		</td>
 		<td colspan="1" width="20%">
-		<font color="#006400">Solution 3</font>:<br/><textarea style="color: royalblue" width="40%" id="example_3" name="example_1" rows="3">A heating hat: a hat with a heating mechanism that you put on top of your head.</textarea><br />
+		<font color="#006400">Solution</font>:<br/><textarea style="color: royalblue" width="40%" id="example_3" name="example_1" rows="3">A heating hat: a hat with a heating mechanism that you put on top of your head.</textarea><br />
 		<br />
 		</td>
 		<td colspan="1" width="40%">
-		What inspired you 1:<br/><textarea style="color: royalblue" width="100%" id="example_insp_1" name="example_insp_1" rows="3">A dryer spins the clothes to dry them. I thought that maybe a similar idea can work for hair</textarea><br />
+		What inspired you:<br/><textarea style="color: royalblue" width="100%" id="example_insp_1" name="example_insp_1" rows="3">A dryer spins the clothes to dry them. I thought that maybe a similar idea can work for hair</textarea><br />
 		</td>
 		<td colspan="1" width="40%">
-		What inspired you 2:<br/><textarea style="color: royalblue" width="100%" id="example_insp_2" name="example_insp_2" rows="3">I was inspired by a nail polish drying spray: you spray it on your nails and the nail polish gets dry faster.</textarea><br />
+		What inspired you:<br/><textarea style="color: royalblue" width="100%" id="example_insp_2" name="example_insp_2" rows="3">I was inspired by a nail polish drying spray: you spray it on your nails and the nail polish gets dry faster.</textarea><br />
 		</td>
 		<td colspan="1" width="20%">
-		What inspired you 3:<br/><textarea style="color: royalblue" width="40%" id="example_insp_3" name="example_insp_3" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result with the hair drying faster.</textarea><br />
+		What inspired you:<br/><textarea style="color: royalblue" width="40%" id="example_insp_3" name="example_insp_3" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result with the hair drying faster.</textarea><br />
 		<br />
 		</td>
 		</tr>
@@ -959,27 +1001,27 @@ Related statements:<br/>
 		<tbody>
 		<tr style="border:2px solid #aaa;">
 		<td colspan="1" width="40%">
-		Solution 1 </b>:<textarea style="color: royalblue;width:100%" id="example_1" name="example_1" rows="3">Hair drying machine: a machine that spins your hair until it is dry</textarea><br />
+		Solution</b>:<textarea style="color: royalblue;width:100%" id="example_1" name="example_1" rows="3">Hair drying machine: a machine that spins your hair until it is dry</textarea><br />
 		</td>
 		<td colspan="2" width="40%">
-		What inspired you 1:<br/><textarea style="color: royalblue;width:100%" id="example_insp_1" name="example_insp_1" rows="3">A dryer spins the clothes to dry them. I thought that maybe a similar idea can work for hair</textarea><br />
+		What inspired you:<br/><textarea style="color: royalblue;width:100%" id="example_insp_1" name="example_insp_1" rows="3">A dryer spins the clothes to dry them. I thought that maybe a similar idea can work for hair</textarea><br />
 		</td>
 		</tr>
 		<tr style="border:2px solid #aaa;">
 		<td colspan="1" width="40%">
-		Solution 2</b>:<textarea style="color: royalblue;width:100%" id="example_2" name="example_1" rows="3">A hair spray that has drying qualities</textarea><br />
+		Solution</b>:<textarea style="color: royalblue;width:100%" id="example_2" name="example_1" rows="3">A hair spray that has drying qualities</textarea><br />
 		</td>
 		<td colspan="2" width="40%">
-		What inspired you 2:<br/><textarea style="color: royalblue;width:100%" id="example_insp_2" name="example_insp_2" rows="3">I was inspired by a nail polish drying spray: you spray it on your nails and the nail polish gets dry faster.</textarea><br />
+		What inspired you:<br/><textarea style="color: royalblue;width:100%" id="example_insp_2" name="example_insp_2" rows="3">I was inspired by a nail polish drying spray: you spray it on your nails and the nail polish gets dry faster.</textarea><br />
 		</td>
 		</tr>
 		<tr style="border:2px solid #aaa;">
 		<td colspan="1" width="20%">
-		Solution 3</b></font>:<textarea style="color: royalblue;width:100%" id="example_3" name="example_1" rows="3">A heating hat: a hat with a heating mechanism that you put on top of your head.</textarea><br />
+		Solution</b></font>:<textarea style="color: royalblue;width:100%" id="example_3" name="example_1" rows="3">A heating hat: a hat with a heating mechanism that you put on top of your head.</textarea><br />
 		<br />
 		</td>
 		<td colspan="2" width="40%">
-		What inspired you 3:<br/><textarea style="color: royalblue;width:100%" id="example_insp_3" name="example_insp_3" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result with the hair drying faster.</textarea><br />
+		What inspired you:<br/><textarea style="color: royalblue;width:100%" id="example_insp_3" name="example_insp_3" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result with the hair drying faster.</textarea><br />
 		<br />
 		</td>
 
@@ -1792,96 +1834,203 @@ function getEntryId(type, rowNum) {
 			</table>
 			</div>
 		<div id="submit_cond123" style="display:none">
+		<style>
+        .panel-body {
+            margin-bottom: 30px;
+        }
+        
+        .radio-group {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            min-width: fit-content;
+        }
+        
+        .radio-option input[type="radio"] {
+            margin: 0;
+        }
+        
+        .question {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .vertical-radio-group {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+    </style>
+		<strong style="color: red;">Notice: you will recieve the prolific completion code after completing the following survery.</strong> <br/>
 			Great, you are done! <br />
-
-			Before submitting the task, we would appreciate it if you could answer these questions:.
+			Before submitting the task, please answer the following survey (questions marked in * are mandatory):
 			<br />
 
 			<br />
-			<div class="panel-body" id="helpfulq"><b> Did you find the inspirations given to you helpful in coming up with new ideas? </b><br /> <br/>
-			<input type="radio" id="helpful_no" name="entry.275929979" value="no"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-  
-			<input type="radio" id="helpful_yes" name="entry.275929979" value="yes"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-			</br>
-			<label for="no">No</label> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-  <label for="yes">Yes</label> &nbsp &nbsp
-  </div>
-  </br></br>
-  <div class="panel-body" id="useagainq"><b> If possible, would you use such inspirations when trying to come up with new ideas in the future?  </b><br/> <br/>
-			<input type="radio" id="useagain_no" name="entry.449379310" value="no"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-  
-			<input type="radio" id="useagain_yes" name="entry.449379310" value="yes"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-			</br>
-			<label for="no">No</label> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-  <label for="yes">Yes</label> &nbsp &nbsp
-  
+			<div class="panel-body" id="age_q">
+        <div class="question">What is your age? (*)</div>
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" id="age_q_30" name="entry.2066301639" value="18-29">
+                <label for="age_q_30">18-29</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="age_q_45" name="entry.2066301639" value="30-44">
+                <label for="age_q_45">30-44</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="age_q_60" name="entry.2066301639" value="45-59">
+                <label for="age_q_60">45-59</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="age_q_plus" name="entry.2066301639" value="60+">
+                <label for="age_q_plus">60+</label>
+            </div>
+        </div>
+    </div>
+			
+			 <div class="panel-body" id="gender_q">
+        <div class="question">Gender: How do you identify? (*)</div>
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" id="gender_q_male" name="entry.1503741400" value="Male">
+                <label for="gender_q_male">Male</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="gender_q_female" name="entry.1503741400" value="Female">
+                <label for="gender_q_female">Female</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="gender_q_other" name="entry.1503741400" value="Other">
+                <label for="gender_q_other">Other</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="gender_q_prefer_not_say" name="entry.1503741400" value="Prefer not to say">
+                <label for="gender_q_prefer_not_say">Prefer not to say</label>
+            </div>
+        </div>
+    </div>
 
-  </div>
-  
- </br> </br>
-    <div class="panel-body" id="Familiarity"><b> Before starting this task, how familiar were you with existing solutions to the problem presented to you? </b><br/> <br/>
-			&nbsp &nbsp &nbsp <input type="radio" id="famil_veryfamiliar" name="entry.910441527" value="very familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-  
-		&nbsp <input type="radio" id="famil_somewhatfamil" name="entry.910441527" value="somewhat familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+    <div class="panel-body" id="helpfulq">
+        <div class="question">Did you find the inspirations given to you helpful in coming up with new ideas? (*)</div>
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" id="helpful_no" name="entry.275929979" value="no">
+                <label for="helpful_no">No</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="helpful_somewhat" name="entry.275929979" value="somewhat">
+                <label for="helpful_somewhat">Somewhat</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="helpful_yes" name="entry.275929979" value="yes">
+                <label for="helpful_yes">Yes</label>
+            </div>
+        </div>
+    </div>
 
-			<input type="radio" id="famil_neutral" name="entry.910441527" value="neutral">&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-		  
-		<input type="radio" id="famil_notsofamil" name="entry.910441527" value="notso familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-		  
-		<input type="radio" id="famil_notatallfamil" name="entry.910441527" value="notatall familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-		</br> 
-		<label for="very familiar">Very familiar</label> &nbsp &nbsp &nbsp
-		  <label for="somewhat familiar">Somewhat familiar</label> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-		<label for="neutral">Neutral</label> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-		<label for="notso familiar">Not so familiar</label> &nbsp &nbsp &nbsp &nbsp &nbsp
-		  <label for="notatall familiar">Not familiar at all</label> &nbsp &nbsp &nbsp &nbsp
-  
+    <div class="panel-body" id="useagainq">
+        <div class="question">If possible, would you use such inspirations when trying to come up with new ideas in the future? (*)</div>
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" id="useagain_no" name="entry.449379310" value="no">
+                <label for="useagain_no">No</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="useagain_yes" name="entry.449379310" value="yes">
+                <label for="useagain_yes">Yes</label>
+            </div>
+        </div>
+    </div>
 
-  </div>
-  
-  </br></br>
-    <div class="panel-body" id="hardq"><b> How hard did you find this task?  </b><br />
-	&nbsp &nbsp<input type="radio" id="hardq_veryeasy" name="entry.1094765590" value="very easy"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-  
-<input type="radio" id="hardq_fairlyeasy" name="entry.1094765590" value="fairly easy"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+    <div class="panel-body" id="Familiarity">
+        <div class="question">Before starting this task, how familiar were you with existing solutions to the problem presented to you? (*)</div>
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" id="famil_veryfamiliar" name="entry.910441527" value="very familiar">
+                <label for="famil_veryfamiliar">Very familiar</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="famil_somewhatfamil" name="entry.910441527" value="somewhat familiar">
+                <label for="famil_somewhatfamil">Somewhat familiar</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="famil_neutral" name="entry.910441527" value="neutral">
+                <label for="famil_neutral">Neutral</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="famil_notsofamil" name="entry.910441527" value="notso familiar">
+                <label for="famil_notsofamil">Not so familiar</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="famil_notatallfamil" name="entry.910441527" value="notatall familiar">
+                <label for="famil_notatallfamil">Not familiar at all</label>
+            </div>
+        </div>
+    </div>
 
-	<input type="radio" id="hardq_moderate" name="entry.1094765590" value="moderate">&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-  
-<input type="radio" id="hardq_fairlyhard" name="entry.1094765590" value="fairly hard"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-  
-<input type="radio" id="hardq_veryhard" name="entry.1094765590" value="very hard"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-</br> 
-<label for="very easy">Very easy</label> &nbsp &nbsp
-  <label for="fairlyeasy">Fairly easy</label> &nbsp &nbsp &nbsp
-<label for="moderate">Moderate</label> &nbsp &nbsp &nbsp &nbsp
-<label for="fairlyhard">Fairly hard</label> &nbsp &nbsp &nbsp
-  <label for="veryhard">Very hard</label> &nbsp &nbsp &nbsp &nbsp
+    <div class="panel-body" id="hardq">
+        <div class="question">How hard did you find this task? (*)</div>
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" id="hardq_veryeasy" name="entry.1094765590" value="very easy">
+                <label for="hardq_veryeasy">Very easy</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="hardq_fairlyeasy" name="entry.1094765590" value="fairly easy">
+                <label for="hardq_fairlyeasy">Fairly easy</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="hardq_moderate" name="entry.1094765590" value="moderate">
+                <label for="hardq_moderate">Moderate</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="hardq_fairlyhard" name="entry.1094765590" value="fairly hard">
+                <label for="hardq_fairlyhard">Fairly hard</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="hardq_veryhard" name="entry.1094765590" value="very hard">
+                <label for="hardq_veryhard">Very hard</label>
+            </div>
+        </div>
+    </div>
 
-
-  </br></br>
-  </div>
-  </br> </br>
-
- <div class="panel-body" id="time_q"><b> How would you rate the time  you were given to perform the task?  </b><br/><br/>
-<input type="radio" id="timeq_lotmore" name="entry.1307459435" value="lot more">
-<label for="lotmore">I needed a lot more time</label>
-</br></br>
-<input type="radio" id="timeq_bitmore" name="entry.1307459435" value="bit more">
-<label for="bitmore">I needed a bit more time</label>
-</br></br>
-
-<input type="radio" id="timeq_perfect" name="entry.1307459435" value="perfect">
-<label for="perfect">I didn't need more time</label>
-</br></br>
-
-<input type="radio" id="timeq_bitless" name="entry.1307459435" value="bit less">
-<label for="bitless">I had a bit more time than I needed</label>
-</br></br>
-
-<input type="radio" id="timeq_lotless" name="entry.1307459435" value="lot less">
-<label for="lotless">I had a lot more time than I needed</label>
-</br></br>
- </div>
+    <div class="panel-body" id="time_q">
+        <div class="question">How would you rate the time you were given to perform the task? (*)</div>
+        <div class="vertical-radio-group">
+            <div class="radio-option">
+                <input type="radio" id="timeq_lotmore" name="entry.1307459435" value="lot more">
+                <label for="timeq_lotmore">I needed a lot more time</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="timeq_bitmore" name="entry.1307459435" value="bit more">
+                <label for="timeq_bitmore">I needed a bit more time</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="timeq_perfect" name="entry.1307459435" value="perfect">
+                <label for="timeq_perfect">I didn't need more time</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="timeq_bitless" name="entry.1307459435" value="bit less">
+                <label for="timeq_bitless">I had a bit more time than I needed</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="timeq_lotless" name="entry.1307459435" value="lot less">
+                <label for="timeq_lotless">I had a lot more time than I needed</label>
+            </div>
+        </div>
+    </div>
  
 			
  If you have some comments on the task, or any ideas for improvement, you can write them in the box below:
@@ -1896,72 +2045,169 @@ function getEntryId(type, rowNum) {
 		
 		
 		<div id="submit_cond4" style="display:none">
+		<style>
+        .panel-body {
+            margin-bottom: 30px;
+        }
+        
+        .radio-group {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            min-width: fit-content;
+        }
+        
+        .radio-option input[type="radio"] {
+            margin: 0;
+        }
+        
+        .question {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .vertical-radio-group {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+    </style>
+	<strong style="color: red;">Notice: you will recieve the prolific completion code after completing the following survery.</strong> <br/>
 			Great, you are done! <br />
-			Before submitting the task, we would appreciate it if you could answer these questions:.
-			<br />
+			Before submitting the task, please answer the following survey (questions marked in * are mandatory):
   </br></br>
-  <div class="panel-body" id="Familiarity_cond4"><b> Before starting this task, how familiar were you with existing solutions to the problem presented to you? </b><br/> <br/>
-			&nbsp &nbsp &nbsp <input type="radio" id="famil_veryfamiliar_c4" name="entry.910441527" value="very familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-  
-		&nbsp <input type="radio" id="famil_somewhatfamil_c4" name="entry.910441527" value="somewhat familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-
-			<input type="radio" id="famil_neutral_c4" name="entry.910441527" value="neutral">&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-		  
-		<input type="radio" id="famil_notsofamil_c4" name="entry.910441527" value="notso familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-		  
-		<input type="radio" id="famil_notatallfamil_c4" name="entry.910441527" value="notatall familiar"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-		</br> 
-		<label for="very familiar">Very familiar</label> &nbsp &nbsp &nbsp
-		  <label for="somewhat familiar">Somewhat familiar</label> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-		<label for="neutral">Neutral</label> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-		<label for="notso familiar">Not so familiar</label> &nbsp &nbsp &nbsp &nbsp &nbsp
-		  <label for="notatall familiar">Not familiar at all</label> &nbsp &nbsp &nbsp &nbsp
   
+  <div class="panel-body" id="age_q_c4">
+        <div class="question">What is your age? (*)</div>
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" id="age_q_c4_30" name="entry.1348031960" value="18-29">
+                <label for="age_q_c4_30">18-29</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="age_q_c4_45" name="entry.1348031960" value="30-44">
+                <label for="age_q_c4_45">30-44</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="age_q_c4_60" name="entry.1348031960" value="45-59">
+                <label for="age_q_c4_60">45-59</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="age_q_c4_plus" name="entry.1348031960" value="60+">
+                <label for="age_q_c4_plus">60+</label>
+            </div>
+        </div>
+    </div>
+			
+			 <div class="panel-body" id="gender_q_c4">
+        <div class="question">Gender: How do you identify? (*)</div>
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" id="gender_q_c4_male" name="entry.2070270520" value="Male">
+                <label for="gender_q_c4_male">Male</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="gender_q_c4_female" name="entry.2070270520" value="Female">
+                <label for="gender_q_c4_female">Female</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="gender_q_c4_other" name="entry.2070270520" value="Other">
+                <label for="gender_q_c4_other">Other</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="gender_q_c4_prefer_not_say" name="entry.2070270520" value="Prefer not to say">
+                <label for="gender_q_c4_prefer_not_say">Prefer not to say</label>
+            </div>
+        </div>
+    </div>
+<div class="panel-body" id="Familiarity_cond4">
+        <div class="question">Before starting this task, how familiar were you with existing solutions to the problem presented to you? (*)</div>
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" id="famil_veryfamiliar_c4" name="entry.910441527" value="very familiar">
+                <label for="famil_veryfamiliar_c4">Very familiar</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="famil_somewhatfamil_c4" name="entry.910441527" value="somewhat familiar">
+                <label for="famil_somewhatfamil_c4">Somewhat familiar</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="famil_neutral_c4" name="entry.910441527" value="neutral">
+                <label for="famil_neutral_c4">Neutral</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="famil_notsofamil_c4" name="entry.910441527" value="notso familiar">
+                <label for="famil_notsofamil_c4">Not so familiar</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="famil_notatallfamil_c4" name="entry.910441527" value="notatall familiar">
+                <label for="famil_notatallfamil_c4">Not familiar at all</label>
+            </div>
+        </div>
+    </div>
 
-  </div>
-  
-  </br>
-  
-    <div class="panel-body" id="hardq_c4"><b> How hard did you find this task?  </b><br /><br/>
-	<input type="radio" id="veryeasy_c4" name="entry.1094765590" value="very easy"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-  
-<input type="radio" id="fairlyeasy_c4" name="entry.1094765590" value="fairly easy"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+    <div class="panel-body" id="hardq_c4">
+        <div class="question">How hard did you find this task? (*)</div>
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" id="veryeasy_c4" name="entry.1094765590" value="very easy">
+                <label for="veryeasy_c4">Very easy</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="fairlyeasy_c4" name="entry.1094765590" value="fairly easy">
+                <label for="fairlyeasy_c4">Fairly easy</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="moderate_c4" name="entry.1094765590" value="moderate">
+                <label for="moderate_c4">Moderate</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="fairlyhard_c4" name="entry.1094765590" value="fairly hard">
+                <label for="fairlyhard_c4">Fairly hard</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="veryhard_c4" name="entry.1094765590" value="very hard">
+                <label for="veryhard_c4">Very hard</label>
+            </div>
+        </div>
+    </div>
 
-	<input type="radio" id="moderate_c4" name="entry.1094765590" value="moderate">&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-  
-<input type="radio" id="fairlyhard_c4" name="entry.1094765590" value="fairly hard"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-  
-<input type="radio" id="veryhard_c4" name="entry.1094765590" value="very hard"> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-</br> 
-<label for="very easy">Very easy</label> &nbsp &nbsp
-  <label for="fairlyeasy">Fairly easy</label> &nbsp &nbsp
-<label for="moderate">Moderate</label> &nbsp &nbsp
-<label for="fairlyhard">Fairly hard</label> &nbsp &nbsp &nbsp &nbsp &nbsp
-  <label for="veryhard">Very hard</label> &nbsp &nbsp &nbsp &nbsp
-</div>
-
-</br> </br>
-
- <div class="panel-body" id="timeq_c4"><b> How would you rate the time  you were given to perform the task?  </b><br />
-<input type="radio" id="lotmore_c4" name="entry.1307459435" value="lot more">
-<label for="lotmore">I needed a lot more time</label>
-</br></br>
-<input type="radio" id="bitmore_c4" name="entry.1307459435" value="bit more">
-<label for="bitmore">I needed a bit more time</label>
-</br></br>
-
-<input type="radio" id="perfect_c4" name="entry.1307459435" value="perfect">
-<label for="perfect">I didn't need more time</label>
-</br></br>
-
-<input type="radio" id="bitless_c4" name="entry.1307459435" value="bit less">
-<label for="bitless">I had a bit more time than I needed</label>
-</br></br>
-
-<input type="radio" id="lotless_c4" name="entry.1307459435" value="lot less">
-<label for="lotless">I had a lot more time than I needed</label>
-</br></br>
- </div>
+    <div class="panel-body" id="timeq_c4">
+        <div class="question">How would you rate the time you were given to perform the task? (*)</div>
+        <div class="vertical-radio-group">
+            <div class="radio-option">
+                <input type="radio" id="lotmore_c4" name="entry.1307459435" value="lot more">
+                <label for="lotmore_c4">I needed a lot more time</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="bitmore_c4" name="entry.1307459435" value="bit more">
+                <label for="bitmore_c4">I needed a bit more time</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="perfect_c4" name="entry.1307459435" value="perfect">
+                <label for="perfect_c4">I didn't need more time</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="bitless_c4" name="entry.1307459435" value="bit less">
+                <label for="bitless_c4">I had a bit more time than I needed</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="lotless_c4" name="entry.1307459435" value="lot less">
+                <label for="lotless_c4">I had a lot more time than I needed</label>
+            </div>
+        </div>
+    </div>
 
   </br>
   If you have some comments on the task, or any ideas for improvement, you can write them in the box below:
