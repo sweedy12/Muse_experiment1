@@ -308,26 +308,15 @@ window.onload = function() {document.getElementById('submitButton'); }
 			let str = "";
 			for (let i=0; i < 10; i++){ //going over all 10 table rows
 				let str_idx = (i+1).toString()
-				str += "entry number " + str_idx;
-				
-				if (chosen_condition == "cond_4")
-				{
-					str += ": solution" + str_idx + ": " + document.getElementById('self_solution_1_'+str_idx).value;
-				str += ": explanation" + str_idx + ": " + document.getElementById('self_inspiration_explain_1_'+str_idx).value;
-				str += "\n"
-				}
-				else{
-				str += ": solution" + str_idx + ": " + document.getElementById('inspiration_solution_1_'+str_idx).value;
-				str += ": explanation" + str_idx + ": " + document.getElementById('inspiration_explain_1_'+str_idx).value;
-				str += ": source1: " + document.getElementById('inspiration_source_'+str_idx+'_1').value;
-				str += ": source2: " + document.getElementById('inspiration_source_'+str_idx+'_2').value;
-				str += ": source3: " + document.getElementById('inspiration_source_'+str_idx+'_3').value;
+				let s1 = document.getElementById('inspiration_solution_1_'+str_idx).value;
+				let s2 = document.getElementById('inspiration_explain_1_'+str_idx).value;
+				str += s1.length;
+				str += ", " + s2.length;
 				str += "\n";
 				
-				
-				}
 			
 			}
+			//alert(str);
 			//add the "more" section
 			
 			//if (chosen_condition == "cond_4"){
@@ -344,7 +333,7 @@ window.onload = function() {document.getElementById('submitButton'); }
 				//str += "\n"
 				
 			//}
-			writeToTableLogger("table state after " + time_in_seconds + " seconds: " + str + "---$$$---");
+			writeToTableLogger("table state after " + time_in_seconds + " seconds: " + str + "---$$$---", time_in_seconds);
 
 			
 
@@ -428,7 +417,7 @@ window.onload = function() {document.getElementById('submitButton'); }
 	let d1 = document.getElementById('age_q_c4_plus').checked;
 	if (!(a1||b1||c1||d1))
 		{	//alert("timeq");
-		alert("age");
+		//alert("age");
 			all_fine = 1;
 		}
 	 a1 = document.getElementById('gender_q_c4_male').checked;
@@ -437,7 +426,7 @@ window.onload = function() {document.getElementById('submitButton'); }
 	 d1 = document.getElementById('gender_q_c4_prefer_not_say').checked;
 	if (!(a1||b1||c1||d1))
 		{	//alert("timeq");
-		alert("gender");
+		//alert("gender");
 			all_fine = 1;
 		}	
 	
@@ -497,9 +486,11 @@ window.onload = function() {document.getElementById('submitButton'); }
 	function writeToLogger(log){
 		document.getElementById('logger').value += log + '\n'
 	}
-	function writeToTableLogger(log){
+	function writeToTableLogger(log, seconds){
 		//alert(log);
-		document.getElementById('table_logger').value += log + '\n'
+		//alert(seconds);
+		//alert('table_logger_'+seconds);
+		document.getElementById('table_logger_'+seconds).value = log + '\n'
 	}
 	
 	//first page - moving from registration to instructions page 1/3
@@ -662,6 +653,7 @@ function submitTask(){
 
 	// show submit elements
 	document.getElementById("banner").innerHTML = "Short survey"
+	document.documentElement.scrollTop = 0;
 	if (chosen_condition == "cond_4"){
 		document.getElementById("submit_cond4").style.display ="block";
 	}
@@ -714,8 +706,98 @@ function myTimerInspirationAnswer() {
 		<textarea cols="40" id="logger" name="entry.247256415" rows="5" style="display:none">task logs:</textarea>
 	</div>
 	<div class="col-xs-12 col-md-12">
-		<textarea cols="40" id="table_logger" name="entry.953486756" rows="5" style="display:none">task table logs:</textarea>
-	</div>
+    <textarea cols="40" id="table_logger_0" name="entry.1737445315" rows="5" style="display:none">task table logs:</textarea>
+</div>
+	<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_30" name="entry.953486756" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_60" name="entry.339808969" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_90" name="entry.1002113727" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_120" name="entry.1512721910" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_150" name="entry.1568227793" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_180" name="entry.1155962638" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_210" name="entry.845919441" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_240" name="entry.23442405" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_270" name="entry.1761310396" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_300" name="entry.225344182" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_330" name="entry.1798448723" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_360" name="entry.1901402850" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_390" name="entry.1136707941" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_420" name="entry.684190906" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_450" name="entry.99538147" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_480" name="entry.1455015685" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_510" name="entry.23031977" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_540" name="entry.1022367663" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_570" name="entry.818116659 " rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_600" name="entry.818116659" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_630" name="entry.1481718636" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_660" name="entry.257587904" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_690" name="entry.560786093" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_720" name="entry.1347454621" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_750" name="entry.2075432560" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_780" name="entry.417515661" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_810" name="entry.586494539" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_840" name="entry.1597262624" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_870" name="entry.616365288" rows="5" style="display:none">task table logs:</textarea>
+</div>
+<div class="col-xs-12 col-md-12">
+    <textarea cols="40" id="table_logger_900" name="entry.1465751780" rows="5" style="display:none">task table logs:</textarea>
+</div>
 	
 	<div class="col-xs-12 col-md-12">
 		<textarea cols="40" id="prolific_exp_num" name="entry.1687743065" rows="5" style="display:none">00000</textarea>
@@ -769,7 +851,7 @@ function myTimerInspirationAnswer() {
 		You do not need to think through all the details, just the <font color="#006400"><b>main idea</b></font>.
 		<br/>
 		<br />
-		Known solutions for drying hair, such as a hair dryer or patting the hair with a towel are not considered
+		Known solutions for drying hair, such as a hair dryer or patting the hair with a towel are <b> not </b> considered
 	    original solutions, and are <font color="#dc143c"><b>not a good answer</b></font> for this task.
 		<br />
 		<br />
@@ -820,7 +902,7 @@ function myTimerInspirationAnswer() {
 		What inspired you:<br/><textarea style="color: royalblue" width="100%" id="example_insp_2" name="example_insp_2" rows="3">I was inspired by a nail polish drying spray: you spray it on your nails and the nail polish gets dry faster.</textarea><br />
 		</td>
 		<td colspan="1" width="20%">
-		What inspired you:<br/><textarea style="color: royalblue" width="40%" id="example_insp_3" name="example_insp_3" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result with the hair drying faster.</textarea><br />
+		What inspired you:<br/><textarea style="color: royalblue" width="40%" id="example_insp_3" name="example_insp_3" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result in the hair drying faster.</textarea><br />
 		<br />
 		</td>
 		</tr>
@@ -1021,7 +1103,7 @@ Related statements:<br/>
 		<br />
 		</td>
 		<td colspan="2" width="40%">
-		What inspired you:<br/><textarea style="color: royalblue;width:100%" id="example_insp_3" name="example_insp_3" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result with the hair drying faster.</textarea><br />
+		What inspired you:<br/><textarea style="color: royalblue;width:100%" id="example_insp_3" name="example_insp_3" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result in the hair drying faster.</textarea><br />
 		<br />
 		</td>
 
@@ -1078,7 +1160,7 @@ Related statements:<br/>
         </td>
         <td>
           <label>What inspired you:</label><br>
-          <textarea id="example_insp_1" name="example_insp_1" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result with the hair drying faster.</textarea>
+          <textarea id="example_insp_1" name="example_insp_1" rows="3">Looking on a heating blanket made me think about using the same mechanism to heat the head. This may result in the hair drying faster.</textarea>
         </td>
         <td>
           <div class="inspiration-sources">
@@ -1198,9 +1280,9 @@ Related statements:<br/>
 		<br/>
 		<br/>
 	<input name="buttonreutrn2" onclick="ClickOnSecondReturnButton()" type="button"
-		   style="font-family: Tahoma,serif; font-size: 18px" value="Return to the previous instructions page!" />
+		   style="font-family: Tahoma,serif; font-size: 18px" value="Return to the previous instructions page" />
     <input name="buttonpre" onclick="goToMainSection()" type="button"
-		   style="font-family: Tahoma,serif; font-size: 18px" value="Continue to the experiment!" /></div>
+		   style="font-family: Tahoma,serif; font-size: 18px" value="Continue to the experiment" /></div>
 
 <div id="main" style="display:none;margin:30px 50px 20px 50px; font-family: Tahoma,serif; font-size: 18px">
 <div id="banner" style="background-color:paleturquoise" width="100%">Find solutions yourself</div>
@@ -1605,8 +1687,53 @@ Related statements:<br/>
 						<div id="inspiration_solutions_section1" style="display:block"></div>
 						<script>
 						const dropdownValues = {
-  'Dry wet floor': ['-----', 'My idea', '1. A system for treating low back pain ', '2. To prevent, inhibit, or treat intimal hyperplasia', '3. A method for treating or preventing erythema', '4. A topical analgesic', '5. To describe a method of treating ulcerative colitis','6. A method for treating a patient with a GPR 40 agonist','7. A treatment kit','8. to describe a new method of treating complex regional pain syndrome','9. A method for treating CML', '10. To describe a new class of compounds that have a disease-modifying... ', '11. A method for treating cancer', '12.  A method for treating neuromuscular conditions', '13. To treat methamphetamine addiction', '14. A new compound for the treatment of osteoporosis and in general of bone pathologies','15. A method of treating Dengue virus infection ','16. A method for inducing an immune response against a Her-2/neu','17. A method of treating respiratory illness','18. A method of treating chronic kidney disease,','19. To describe a method of treating corneal diseases','20. A method for promoting wound healing'],
-  'Dry a wet floor': ['Select Option', 'My idea', '1', '2', '3', '4', '5','6','7','8','9', '10', '11', '12', '13', '14','15','16'],
+  'Dry a wet floor': ['-----', 'My idea', '1. A system for treating low back pain ', '2. To prevent, inhibit, or treat intimal hyperplasia', '3. A method for treating or preventing erythema', '4. A topical analgesic', '5. To describe a method of treating ulcerative colitis','6. A method for treating a patient with a GPR 40 agonist','7. A treatment kit','8. to describe a new method of treating complex regional pain syndrome','9. A method for treating CML', '10. To describe a new class of compounds that have a disease-modifying... ', '11. A method for treating cancer', '12.  A method for treating neuromuscular conditions', '13. To treat methamphetamine addiction', '14. A new compound for the treatment of osteoporosis and in general of bone pathologies','15. A method of treating Dengue virus infection ','16. A method for inducing an immune response against a Her-2/neu','17. A method of treating respiratory illness','18. A method of treating chronic kidney disease,','19. To describe a method of treating corneal diseases','20. A method for promoting wound healing'],
+  'Protect plants': ['Select Option', 'My idea', '1', '2', '3', '4', '5','6','7','8','9', '10', '11', '12', '13', '14','15','16'],
+  'Cool a room': ['1. a cooling system for operation ...', 
+'2. a heat conserving space heater', 
+'3. a passive wall structure for ...', 
+'4. cooling or heat a space', 
+'5. a method and apparatus for ...', 
+'6. a cooling apparatus for a ...', 
+'7. a method for cooling spaces', 
+'8. a system for cooling a ...', 
+'9. a cooling module', 
+'10. a method of constructing rooms ...', 
+'11. a cooler with improved illumination', 
+'12. a water cooled door', 
+'13. a device for cooling a ...', 
+'14. heating and cool a room', 
+'15. a cold head for a ...', 
+'16. cooling products', 
+'17. a filter system for clean ...', 
+'18. a cooling tower fill assembly', 
+'19. a computer cooling assembly', 
+'20. a cooling bed system'],
+'Seal a leak': ['1. a method and apparatus for ...', 
+'2. a radiator with leak detecting ...', 
+'3. a safety seal for a ...', 
+'4. a leak detection system', 
+'5. a method for sealing a ...', 
+'6. a method of attaching a ...', 
+'7. sealing puncture holes in a ...', 
+'8. a labyrinth seal for a ...', 
+'9. a method of sealing a ...', 
+'10. a water seal for regenerator', 
+'11. a ventable seal', 
+'12. a seal assembly for use ...', 
+'13. a system for sealing a ...', 
+'14. a method for ensuring the ...', 
+'15. a valve with a dynamic ...', 
+'16. a seal for sealing openings ...', 
+'17. a leak check system', 
+'18. a form, fill and seal ...', 
+'19. a condensate drain valve', 
+'20. a wax control element for ...', 
+'21. a cylinder cooling apparatus for ...', 
+'22. a sealant dispensing system', 
+'23. a seat for a valve ...', 
+'24. a sealant for underground applications', 
+'25. a chamber sealing mechanism']
 };
 
 function updateTable(condition) {
@@ -1871,9 +1998,9 @@ function getEntryId(type, rowNum) {
             gap: 30px;
         }
     </style>
-		<strong style="color: red;">Notice: you will recieve the prolific completion code after completing the following survery.</strong> <br/>
 			Great, you are done! <br />
-			Before submitting the task, please answer the following survey (questions marked in * are mandatory):
+			Before submitting the task, please answer the following survey (questions marked in * are mandatory). <br/>
+			<strong style="color: red;">Notice: you will recieve the prolific completion code after completing the following survey.</strong> <br/>
 			<br />
 
 			<br />
@@ -1940,7 +2067,7 @@ function getEntryId(type, rowNum) {
     </div>
 
     <div class="panel-body" id="useagainq">
-        <div class="question">If possible, would you use such inspirations when trying to come up with new ideas in the future? (*)</div>
+        <div class="question">In the future, when trying to solve some problem, do you think having access to such inspirations would be useful for you (for example, as a search engine)? (*)</div>
         <div class="radio-group">
             <div class="radio-option">
                 <input type="radio" id="useagain_no" name="entry.449379310" value="no">
@@ -2082,9 +2209,10 @@ function getEntryId(type, rowNum) {
             gap: 30px;
         }
     </style>
-	<strong style="color: red;">Notice: you will recieve the prolific completion code after completing the following survery.</strong> <br/>
+	
 			Great, you are done! <br />
-			Before submitting the task, please answer the following survey (questions marked in * are mandatory):
+			Before submitting the task, please answer the following survey (questions marked in * are mandatory). </br>
+			<strong style="color: red;">Notice: you will recieve the prolific completion code after completing the survey.</strong> <br/>
   </br></br>
   
   <div class="panel-body" id="age_q_c4">
