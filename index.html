@@ -168,6 +168,18 @@ async function sample_condition_problem(){
 		let values = await get_possible_conditions_and_problems();
 		var all_possible_problems = values[0]
 		var problem_map = values[1]
+		if (all_possible_problems.length == 0){
+			//alert("no available problems");
+			all_possible_problems.push("problem1");
+			all_possible_problems.push("problem2");
+			problem_map["problem1"] = [0,1,2,3];
+			problem_map["problem2"] = [0,1,2,3];
+			//alert(problem_map);
+			//alert(all_possible_problems);
+			
+		}
+		
+		
 		var random_number_problem = Math.floor(Math.random() * all_possible_problems.length)
 		chosen_problem = all_possible_problems[random_number_problem]
 		var random_number_condition_version = Math.floor(Math.random() * problem_map[chosen_problem].length);
@@ -1827,7 +1839,7 @@ function updateTable(condition) {
 function getEntryId(type, rowNum) {
   const entryIds = {
     solution: ['314622552', '1009268483', '685221619', '280201648', '1697104374', '2132214692', '1620257989', '329613343', '1299464159', '2087526347'],
-    explain: ['231987172', 'F36569260', '1330189626', '489318433', '1897412186', '1435909855', '179661302', '221785788', '2085492295', '226881551'],
+    explain: ['231987172', '2036569260', '1330189626', '489318433', '1897412186', '1435909855', '179661302', '221785788', '2085492295', '226881551'],
     source1: ['2088415631', '2077441529', '311318780', '1273149936', '237667301', '1375352256', '1774926837', '640395032', '130655511', '1027911890'],
     source2: ['561012748', '44985646', '104785335', '1691780054', '1692000982', '253520441', '1566654564', '10794285', '384858581', '1895324335'],
     source3: ['1242110235', '153184358', '924309875', '2089932015', '316883324', '361050005', '1460555298', '1805990914', '144163614', '1419871238']
@@ -1919,16 +1931,6 @@ function getEntryId(type, rowNum) {
 						</td>
 						<td colspan="1" style="width:40%" >
 						What inspired you 10:<br /><textarea style="width:85%" id="self_inspiration_explain_1_10" name="entry.2022967023" rows="3"></textarea><br />
-						</td>
-						</tr>
-						<tr style="border:2px solid #aaa;">
-						<td colspan="1" style="width:50%" >
-						More solutions:<br /><textarea style="width:85%" id="more_self_solutions_1" name="entry.1025646376" rows="3"></textarea><br />
-						<br />
-						</td>
-						<td colspan="1" style="width:40%" >
-						What inspired you - More:<br /><textarea style="width:85%" id="more_self_inspiration_explain_1" name="entry.1048140812" rows="3"></textarea><br />
-						<br />
 						</td>
 						</tr>
 						</tbody>
