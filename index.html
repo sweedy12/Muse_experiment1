@@ -192,6 +192,7 @@ async function sample_condition_problem(){
 		writeToLogger("Chosen problem: " + chosen_problem + '\n');
 
 		writeToLogger("Chosen condition: " + chosen_condition + '\n');
+		chosen_condition = "cond_4";
 		return [chosen_condition, problems_mapping[chosen_problem]];
 		
 		
@@ -318,6 +319,7 @@ window.onload = function() {document.getElementById('submitButton'); }
 			//let dateTime = date + ' ' + time;
 			//getting the inforformation from the table entries
 			let str = "";
+			if (chosen_condition != "cond_4"){
 			for (let i=0; i < 10; i++){ //going over all 10 table rows
 				let str_idx = (i+1).toString()
 				let s1 = document.getElementById('inspiration_solution_1_'+str_idx).value;
@@ -328,6 +330,23 @@ window.onload = function() {document.getElementById('submitButton'); }
 				
 			
 			}
+			}
+			else{
+			
+			for (let i=0; i < 10; i++){ //going over all 10 table rows
+				let str_idx = (i+1).toString()
+				let s1 = document.getElementById('self_inspiration_explain_1_'+str_idx).value;
+				let s2 = document.getElementById('self_solution_1_'+str_idx).value;
+				str += s1.length;
+				str += ", " + s2.length;
+				str += "\n";
+				
+			
+			}
+				
+			
+			}
+			
 			//alert(str);
 			//add the "more" section
 			
@@ -775,7 +794,7 @@ function myTimerInspirationAnswer() {
     <textarea cols="40" id="table_logger_540" name="entry.1022367663" rows="5" style="display:none">task table logs:</textarea>
 </div>
 <div class="col-xs-12 col-md-12">
-    <textarea cols="40" id="table_logger_570" name="entry.818116659 " rows="5" style="display:none">task table logs:</textarea>
+    <textarea cols="40" id="table_logger_570" name="entry.711704079 " rows="5" style="display:none">task table logs:</textarea>
 </div>
 <div class="col-xs-12 col-md-12">
     <textarea cols="40" id="table_logger_600" name="entry.818116659" rows="5" style="display:none">task table logs:</textarea>
