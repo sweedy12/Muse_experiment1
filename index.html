@@ -77,13 +77,14 @@ var versions_mapping = {'v_1': ['graph_1'],
     console.log(error);
   }
 }
-  var condition_threshold = 50;
-  function get_possible_conditions_and_problems() {
+var condition_threshold = 50;
+
+function get_possible_conditions_and_problems() {
   return new Promise(function(resolve, reject) {
     var problem_map = new Map();
     var all_possible_problems = [];
-    var problem_arr = [];
-
+    var condition_counts = {}; // To store the count of subjects in each condition
+    
     fetchData()
       .then(function(result) {
         var problemSections = result.split(" ");
@@ -102,11 +103,15 @@ var versions_mapping = {'v_1': ['graph_1'],
           problemSections[8],
           problemSections[9]
         ];
+        
+        condition_counts["problem1"] = mapping["problem1"].map(count => parseInt(count));
+        condition_counts["problem2"] = mapping["problem2"].map(count => parseInt(count));
+        
         var was_problem1_found = 0;
         var was_problem2_found = 0;
         var problem1_arr = [];
         var problem2_arr = [];
-
+        
         for (let i = 0; i < 4; i++) {
           if (mapping["problem1"][i] < condition_threshold) {
             if (was_problem1_found == 0) {
@@ -123,22 +128,23 @@ var versions_mapping = {'v_1': ['graph_1'],
             problem2_arr.push(i + 1);
           }
         }
-
+        
         if (problem1_arr.length > 0) {
           problem_map["problem1"] = problem1_arr;
         }
         if (problem2_arr.length > 0) {
           problem_map["problem2"] = problem2_arr;
         }
-
-        resolve([all_possible_problems, problem_map]);
+        
+        resolve([all_possible_problems, problem_map, condition_counts]);
       })
       .catch(function(error) {
-	  alert("error in getting the data");
-	  reject(error);
+        alert("error in getting the data");
+        reject(error);
       });
   });
 }
+
 
 
 function incrementCondition(problemId, conditionId) {
@@ -164,43 +170,85 @@ function incrementCondition(problemId, conditionId) {
     });
 }
 
-async function sample_condition_problem(){
-		let values = await get_possible_conditions_and_problems();
-		var all_possible_problems = values[0]
-		var problem_map = values[1]
-		if (all_possible_problems.length == 0){
-			//alert("no available problems");
-			all_possible_problems.push("problem1");
-			all_possible_problems.push("problem2");
-			problem_map["problem1"] = [0,1,2,3];
-			problem_map["problem2"] = [0,1,2,3];
-			//alert(problem_map);
-			//alert(all_possible_problems);
-			
-		}
-		
-		
-		var random_number_problem = Math.floor(Math.random() * all_possible_problems.length)
-		chosen_problem = all_possible_problems[random_number_problem]
-		var random_number_condition_version = Math.floor(Math.random() * problem_map[chosen_problem].length);
+function weightedRandomSelect(items, weights) {
+  // Calculate weight sum
+  const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
+  
+  // If all weights are 0 (all at threshold), use equal weights
+  if (weightSum === 0) {
+    return Math.floor(Math.random() * items.length);
+  }
+  
+  // Generate a random value between 0 and weightSum
+  let random = Math.random() * weightSum;
+  
+  // Find the item based on weights
+  for (let i = 0; i < items.length; i++) {
+    random -= weights[i];
+    if (random <= 0) {
+      return i;
+    }
+  }
+  
+  // Fallback (should not reach here)
+  return 0;
+}
 
-		var chosen_cond_number = problem_map[chosen_problem][random_number_condition_version];
-		
-		chosen_condition = number_to_cond[chosen_cond_number];
-		//alert(chosen_condition);
-		//alert(chosen_problem);
-		writeToLogger("Chosen problem: " + chosen_problem + '\n');
-
-		writeToLogger("Chosen condition: " + chosen_condition + '\n');
-		return [chosen_condition, problems_mapping[chosen_problem]];
-		
-		
-
-		//document.getElementById("task_chosen_problem").innerHTML = chosen_problem;
-		// curr_graph_url_problem = chosen_problem.replace(" ", "%20");
-
-		// log beginning time
-		// logCurrentTime("first instructions section") ?
+async function sample_condition_problem() {
+  let values = await get_possible_conditions_and_problems();
+  var all_possible_problems = values[0];
+  var problem_map = values[1];
+  var condition_counts = values[2];
+  
+  if (all_possible_problems.length == 0) {
+    //alert("no available problems");
+    all_possible_problems = ["problem1", "problem2"];
+    problem_map["problem1"] = [1, 2, 3, 4];
+    problem_map["problem2"] = [1, 2, 3, 4];
+    condition_counts["problem1"] = [condition_threshold, condition_threshold, condition_threshold, condition_threshold];
+    condition_counts["problem2"] = [condition_threshold, condition_threshold, condition_threshold, condition_threshold];
+  }
+  
+  // Calculate problem weights based on available non-saturated conditions
+  const problemWeights = [];
+  for (const problem of all_possible_problems) {
+    // For each problem, sum up the "space" left in each condition (threshold - count)
+    let problemWeight = 0;
+    for (let i = 0; i < 4; i++) {
+      if (condition_counts[problem][i] < condition_threshold) {
+        problemWeight += (condition_threshold - condition_counts[problem][i]);
+      }
+    }
+    problemWeights.push(problemWeight);
+  }
+  
+  // Choose problem based on weights
+  const chosenProblemIndex = weightedRandomSelect(all_possible_problems, problemWeights);
+  const chosen_problem = all_possible_problems[chosenProblemIndex];
+  
+  // Calculate condition weights for the chosen problem
+  const availableConditions = problem_map[chosen_problem];
+  const conditionWeights = [];
+  
+  for (const conditionNumber of availableConditions) {
+    const index = conditionNumber - 1; // Convert to 0-based index
+    const count = condition_counts[chosen_problem][index];
+    if (count < condition_threshold) {
+      conditionWeights.push(condition_threshold - count);
+    } else {
+      conditionWeights.push(0); // Saturated condition gets 0 weight
+    }
+  }
+  
+  // Choose condition based on weights
+  const chosenConditionIndex = weightedRandomSelect(availableConditions, conditionWeights);
+  const chosen_cond_number = availableConditions[chosenConditionIndex];
+  
+  chosen_condition = number_to_cond[chosen_cond_number];
+  
+  writeToLogger("Chosen problem: " + chosen_problem + '\n');
+  writeToLogger("Chosen condition: " + chosen_condition + '\n');
+  return [chosen_condition, problems_mapping[chosen_problem]];
 }
 
 
