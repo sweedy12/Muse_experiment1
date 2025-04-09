@@ -24,9 +24,237 @@
     messagingSenderId: "313728899350",
     appId: "1:313728899350:web:f309d4b02c049bac4c5837"
   };
+  
+  function captureTableContent() {
+  try {
+    const tableContent = {};
+    
+    if (chosen_condition != "cond_4") {
+      // For conditions 1-3
+      for (let i = 0; i < 10; i++) {
+        const idx = (i+1).toString();
+        
+        // Get the actual content from each field
+        const solution = document.getElementById('inspiration_solution_1_'+idx)?.value || '';
+        const explanation = document.getElementById('inspiration_explain_1_'+idx)?.value || '';
+        
+        // Get inspiration sources if they exist
+        let sources = [];
+        for (let j = 1; j <= 3; j++) {
+          const sourceElem = document.getElementById(`inspiration_source_${idx}_${j}`);
+          if (sourceElem && sourceElem.value && sourceElem.value !== "-----") {
+            sources.push(sourceElem.value);
+          }
+        }
+        
+        // Store all content for this row
+        tableContent[`row_${idx}`] = {
+          solution: solution,
+          explanation: explanation,
+          sources: sources
+        };
+      }
+    } else {
+      // For condition 4
+      for (let i = 0; i < 10; i++) {
+        const idx = (i+1).toString();
+        
+        // Get the actual content from each field
+        const solution = document.getElementById('self_solution_1_'+idx)?.value || '';
+        const explanation = document.getElementById('self_inspiration_explain_1_'+idx)?.value || '';
+        
+        // Store all content for this row
+        tableContent[`row_${idx}`] = {
+          solution: solution,
+          explanation: explanation
+        };
+      }
+    }
+    
+    // Log the content
+    console.log("[TABLE_FINAL_CONTENT] Table final content captured");
+    
+    // Save directly to Firebase if the function exists
+    if (typeof saveTableContentToFirebase === 'function') {
+      saveTableContentToFirebase(tableContent);
+    }
+    
+    return tableContent;
+  } catch (e) {
+    console.error("Error capturing table content:", e);
+    return null;
+  }
+}
+  
   firebase.initializeApp(firebaseConfig);
   var database = firebase.database();
   
+  // Add this near the beginning of your script
+// Add this near the beginning of your script
+function setupLogCapture() {
+  // Store original console methods
+  const originalConsole = {
+    log: console.log,
+    warn: console.warn,
+    error: console.error
+  };
+  
+  // Create an array to store logs
+  const logs = [];
+  const tableStates = {};
+  let tableContent = null;
+  
+  // Function to save logs to Firebase
+  function saveLogsToFirebase() {
+  try {
+    // Get prolific ID
+    const prolificId = document.getElementById('prolific_id')?.value || 'unknown_user';
+    
+    if ((logs.length > 0 || Object.keys(tableStates).length > 0 || tableContent !== null) && prolificId !== 'unknown_user') {
+      // Reference to logs for this specific user
+      const userLogsRef = firebase.database().ref('logs/' + prolificId);
+      
+      // Create a more structured entry with timestamp as part of the data
+      const timestamp = Date.now();
+      const formattedDate = new Date(timestamp).toISOString()
+        .replace(/[:.]/g, '-')  // Replace colons and dots with hyphens
+        .replace('T', '_');     // Replace T with underscore
+      
+      // Create a more readable session key
+      const sessionKey = `session_${formattedDate}`;
+      
+      // Use set instead of push to use our custom key
+      userLogsRef.child(sessionKey).set({
+        timestamp: timestamp,
+        problem: chosen_problem || 'unknown',
+        condition: chosen_condition || 'unknown',
+        logs: logs,
+        tableStates: tableStates,
+        finalTableContent: tableContent
+      });
+      
+      // Clear the logs array and tableStates object
+      logs.length = 0;
+      Object.keys(tableStates).forEach(key => delete tableStates[key]);
+      tableContent = null;
+      
+      console.log(`Logs saved to Firebase under user ${prolificId}, session key: ${sessionKey}`);
+    }
+  } catch (e) {
+    originalConsole.error('Error saving logs to Firebase:', e);
+  }
+}
+  
+  // Function to save table state
+  window.saveTableStateToFirebase = function(timeInSeconds, stateData) {
+    tableStates[`table_state_${timeInSeconds}`] = stateData;
+    
+    // If we have many table states, save them
+    if (Object.keys(tableStates).length >= 5) {
+      saveLogsToFirebase();
+    }
+  };
+  window.saveTableContentToFirebase = function(content) {
+    tableContent = content;
+	// Save logs immediately when table content is captured
+    saveLogsToFirebase();
+  };
+  
+  // Override console methods
+  console.log = function() {
+    // Call original method
+    originalConsole.log.apply(console, arguments);
+    
+    // Convert arguments to array and save the exact log
+    const logArgs = Array.from(arguments).map(arg => {
+      if (typeof arg === 'object') {
+        try {
+          return JSON.stringify(arg);
+        } catch (e) {
+          return String(arg);
+        }
+      }
+      return String(arg);
+    });
+    
+    // Add to logs array
+    logs.push({
+      type: 'log',
+      time: new Date().toISOString(),
+      message: logArgs.join(' ')
+    });
+    
+    // If we have several logs, save them
+    if (logs.length >= 10) {
+      saveLogsToFirebase();
+    }
+  };
+  
+  console.warn = function() {
+    originalConsole.warn.apply(console, arguments);
+    
+    const logArgs = Array.from(arguments).map(arg => {
+      if (typeof arg === 'object') {
+        try {
+          return JSON.stringify(arg);
+        } catch (e) {
+          return String(arg);
+        }
+      }
+      return String(arg);
+    });
+    
+    logs.push({
+      type: 'warn',
+      time: new Date().toISOString(),
+      message: logArgs.join(' ')
+    });
+  };
+  
+  console.error = function() {
+    originalConsole.error.apply(console, arguments);
+    
+    const logArgs = Array.from(arguments).map(arg => {
+      if (typeof arg === 'object') {
+        try {
+          return JSON.stringify(arg);
+        } catch (e) {
+          return String(arg);
+        }
+      }
+      return String(arg);
+    });
+    
+    logs.push({
+      type: 'error',
+      time: new Date().toISOString(),
+      message: logArgs.join(' ')
+    });
+    
+    // Save immediately on errors
+    saveLogsToFirebase();
+  };
+  
+  // Set up event listeners to save logs at critical points
+  window.addEventListener('beforeunload', function() {
+    saveLogsToFirebase();
+  });
+  
+  document.addEventListener('submit', function() {
+  if (!tableContent) {
+      tableContent = captureTableContent();
+    }
+    saveLogsToFirebase();
+  });
+  
+  // Save logs periodically - every 60 seconds
+  setInterval(saveLogsToFirebase, 60000);
+  
+  // Return the save function
+  return saveLogsToFirebase;
+}
+
+let saveLogsFunction;
   
     
   // Initialize Firebase
@@ -169,6 +397,33 @@ function incrementCondition(problemId, conditionId) {
         return false;
     });
 }
+
+// Around line 182, after the existing incrementCondition function
+function incrementConditionWithPromise(problemId, conditionId) {
+  return new Promise(function(resolve, reject) {
+    // Get reference to the specific condition
+    var conditionRef = database.ref(`${problemId}/${conditionId}`);
+    
+    // Get current value and update it
+    conditionRef.once('value').then(function(snapshot) {
+      var currentValue = snapshot.val() || 0;
+      
+      // Create update object
+      var updates = {};
+      updates[`${problemId}/${conditionId}`] = currentValue + 1;
+      
+      // Update the database
+      return database.ref().update(updates);
+    }).then(function() {
+      console.log(`Successfully updated ${problemId} condition ${conditionId}`);
+      resolve(true);
+    }).catch(function(error) {
+      console.error('Error updating condition:', error);
+      reject(error);
+    });
+  });
+}
+
 
 function weightedRandomSelect(items, weights) {
   // Calculate weight sum
@@ -349,221 +604,323 @@ var totalSecondsWithInspiration = 900; //480 todo - change this to see effect on
 	}
 
 
-window.onload = function() {document.getElementById('submitButton'); }
+window.onload = function() {
+  // Initialize log capturing
+  saveLogsFunction = setupLogCapture();
+  console.log("Page loaded at " + new Date().toISOString());
+  
+  try {
+    // Validate that critical form elements exist
+    const formElement = document.getElementById('endOfTaskForm');
+    if (!formElement) {
+      console.error("Form element 'endOfTaskForm' not found!");
+    }
+    
+    // Check if logger fields exist
+    const logger = document.getElementById('logger');
+    if (!logger) {
+      console.error("Main logger element not found!");
+    }
+    
+    // Check table loggers
+    for (let i = 0; i <= 900; i += 30) {
+      const tableLogger = document.getElementById(`table_logger_${i}`);
+      if (!tableLogger) {
+        console.error(`Table logger for ${i} seconds not found!`);
+      }
+    }
+    
+    // Initialize form with chosen problem and condition
+    main();
+  } catch (e) {
+    console.error("Error during page initialization: ", e);
+  }
+};
 
-	function logCurrentTime(section_name){
+function logFormSubmission(status, details) {
+  console.log(`[FORM_SUBMISSION] Status: ${status}`, details);
+}
+
+function logUserAction(action, details) {
+  console.log(`[USER_ACTION] ${action}`, details);
+}
+
+function logError(context, error) {
+  console.error(`[ERROR] Context: ${context}`, error);
+}
+function logCurrentTime(section_name){
 			let today = new Date();
 			let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
 			let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
 			let dateTime = date + ' ' + time;
 			writeToLogger("Entering " + section_name + " time: " + dateTime)
 	}
-	
-		function logCurrentTableTime(time_in_seconds){
-			//let today = new Date();
-			//let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
-			//let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-			//let dateTime = date + ' ' + time;
-			//getting the inforformation from the table entries
-			let str = "";
-			if (chosen_condition != "cond_4"){
-			for (let i=0; i < 10; i++){ //going over all 10 table rows
-				let str_idx = (i+1).toString()
-				let s1 = document.getElementById('inspiration_solution_1_'+str_idx).value;
-				let s2 = document.getElementById('inspiration_explain_1_'+str_idx).value;
-				str += s1.length;
-				str += ", " + s2.length;
-				str += "\n";
-				
-			
-			}
-			}
-			else{
-			
-			for (let i=0; i < 10; i++){ //going over all 10 table rows
-				let str_idx = (i+1).toString()
-				let s1 = document.getElementById('self_inspiration_explain_1_'+str_idx).value;
-				let s2 = document.getElementById('self_solution_1_'+str_idx).value;
-				str += s1.length;
-				str += ", " + s2.length;
-				str += "\n";
-				
-			
-			}
-				
-			
-			}
-			
-			//alert(str);
-			//add the "more" section
-			
-			//if (chosen_condition == "cond_4"){
-			//str += "more entry: "
-			//str += "solution more: " + document.getElementById('more_self_solutions_1').value
-				//str += "explanation more: " + document.getElementById('more_self_inspiration_explain_1').value
 
-				//str += "\n"
-			//}
-			//else {
-			//str += "solution more: " + document.getElementById('more_inspiration_solutions_1').value
-				//str += "explanation more: " + document.getElementById('more_inspiration_explain_1').value
-				//str += "inspiration more: " + document.getElementById('more_inspiration_source_1').value
-				//str += "\n"
-				
-			//}
-			writeToTableLogger("table state after " + time_in_seconds + " seconds: " + str + "---$$$---", time_in_seconds);
-
-			
-
-	}
+	function logCurrentTableTime(time_in_seconds) {
+  let str = "";
+  
+  try {
+    if (chosen_condition != "cond_4") {
+      for (let i = 0; i < 10; i++) { //going over all 10 table rows
+        let str_idx = (i+1).toString();
+        let s1 = document.getElementById('inspiration_solution_1_'+str_idx)?.value || '';
+        let s2 = document.getElementById('inspiration_explain_1_'+str_idx)?.value || '';
+        str += s1.length;
+        str += ", " + s2.length;
+        str += "\n";
+      }
+    } else {
+      for (let i = 0; i < 10; i++) { //going over all 10 table rows
+        let str_idx = (i+1).toString();
+        let s1 = document.getElementById('self_inspiration_explain_1_'+str_idx)?.value || '';
+        let s2 = document.getElementById('self_solution_1_'+str_idx)?.value || '';
+        str += s1.length;
+        str += ", " + s2.length;
+        str += "\n";
+      }
+    }
+    
+    // Create the exact same log message that goes into the form
+    const logMessage = "table state after " + time_in_seconds + " seconds: " + str + "---$$$---";
+    
+    // Save to the table logger textarea for the form submission
+    const loggerElement = document.getElementById('table_logger_'+time_in_seconds);
+    if (loggerElement) {
+      loggerElement.value = logMessage;
+      
+      // Also log to console which will be captured by our logging system
+      console.log(`[TABLE_STATE_${time_in_seconds}]`);
+      
+      // Save the exact same string to Firebase if the logging function is set up
+      if (typeof saveTableStateToFirebase === 'function') {
+        saveTableStateToFirebase(time_in_seconds, logMessage);
+      }
+    } else {
+      console.error(`Table logger element 'table_logger_${time_in_seconds}' not found`);
+    }
+  } catch (e) {
+    console.error("Error in logCurrentTableTime:", e);
+  }
+}
 
 
 
-	function endOfSurveyubmit(){
-	//alert("called the function");
-	var all_fine = 0;
-	//checking for age, gender qs
+	function endOfSurveyubmit() {
+  console.log("Form submission attempted");
+  var all_fine = 0;
+  //checking for age, gender qs
+  
+  if (chosen_condition != "cond_4") {
+    if (!(document.getElementById('helpful_no').checked || document.getElementById('helpful_yes').checked || document.getElementById('helpful_somewhat').checked)) {
+      //alert("helpfulq");
+      //alert("helpful");
+      all_fine = 1;
+    }
+    if (!(document.getElementById('useagain_no').checked || document.getElementById('useagain_yes').checked)) {
+      //alert("useagainq");
+      all_fine = 1;
+    }
+    let a1 = document.getElementById('age_q_30').checked;
+    let b1 = document.getElementById('age_q_45').checked;
+    let c1 = document.getElementById('age_q_60').checked;
+    let d1 = document.getElementById('age_q_plus').checked;
+    if (!(a1||b1||c1||d1)) {	
+      //alert("timeq");
+      //alert("age");
+      all_fine = 1;
+    }
+    a1 = document.getElementById('gender_q_male').checked;
+    b1 = document.getElementById('gender_q_female').checked;
+    c1 = document.getElementById('gender_q_other').checked;
+    d1 = document.getElementById('gender_q_prefer_not_say').checked;
+    if (!(a1||b1||c1||d1)) {	
+      //alert("timeq");
+      //alert("gender");
+      all_fine = 1;
+    }	
+    let a = document.getElementById('hardq_veryeasy').checked;
+    let b = document.getElementById('hardq_fairlyeasy').checked;
+    let c = document.getElementById('hardq_moderate').checked;
+    let d = document.getElementById('hardq_fairlyhard').checked;
+    let e = document.getElementById('hardq_veryhard').checked;
+    
+    if (!(a||b||c||d||e)) {
+      //alert("hardq");
+      all_fine = 1;
+    }
+    a = document.getElementById('timeq_lotless').checked;
+    b = document.getElementById('timeq_lotmore').checked;
+    c = document.getElementById('timeq_perfect').checked;
+    d = document.getElementById('timeq_bitless').checked;
+    e = document.getElementById('timeq_bitmore').checked;
+    
+    if (!(a||b||c||d||e)) {
+      //alert("timeq");
+      all_fine = 1;
+    }
+    
+    a = document.getElementById('famil_veryfamiliar').checked;
+    b = document.getElementById('famil_notatallfamil').checked;
+    c = document.getElementById('famil_neutral').checked;
+    d = document.getElementById('famil_notsofamil').checked;
+    e = document.getElementById('famil_somewhatfamil').checked;
+    if (!(a||b||c||d||e)) {
+      //alert ("familq");
+      all_fine = 1;
+    }
+  } else {
+    let a1 = document.getElementById('age_q_c4_30').checked;
+    let b1 = document.getElementById('age_q_c4_45').checked;
+    let c1 = document.getElementById('age_q_c4_60').checked;
+    let d1 = document.getElementById('age_q_c4_plus').checked;
+    if (!(a1||b1||c1||d1)) {
+      //alert("timeq");
+      //alert("age");
+      all_fine = 1;
+    }
+    a1 = document.getElementById('gender_q_c4_male').checked;
+    b1 = document.getElementById('gender_q_c4_female').checked;
+    c1 = document.getElementById('gender_q_c4_other').checked;
+    d1 = document.getElementById('gender_q_c4_prefer_not_say').checked;
+    if (!(a1||b1||c1||d1)) {
+      //alert("timeq");
+      //alert("gender");
+      all_fine = 1;
+    }
+    
+    let a = document.getElementById('famil_veryfamiliar_c4').checked;
+    let b = document.getElementById('famil_notatallfamil_c4').checked;
+    let c = document.getElementById('famil_neutral_c4').checked;
+    let d = document.getElementById('famil_notsofamil_c4').checked;
+    let e = document.getElementById('famil_somewhatfamil_c4').checked;
+    if (!(a||b||c||d||e)) {
+      //alert("condition 4,fmail");
+      all_fine = 1;
+    }
+    a = document.getElementById('veryeasy_c4').checked;
+    b = document.getElementById('fairlyeasy_c4').checked;
+    c = document.getElementById('moderate_c4').checked;
+    d = document.getElementById('fairlyhard_c4').checked;
+    e = document.getElementById('veryhard_c4').checked;
+    
+    if (!(a||b||c||d||e)) {
+      //alert("condition 4,hardq");
+      all_fine = 1;
+    }
+    a = document.getElementById('lotless_c4').checked;
+    b = document.getElementById('lotmore_c4').checked;
+    c = document.getElementById('perfect_c4').checked;
+    d = document.getElementById('bitless_c4').checked;
+    e = document.getElementById('bitmore_c4').checked;
+    
+    if (!(a||b||c||d||e)) {
+      //alert("condition 4,timeq");
+      all_fine = 1;
+    }
+  }
+  
+  if (all_fine == 0) {
+    console.log("Form validation passed");
+    
+    // Ensure all fields are populated first
+    ensureAllFieldsArePopulated();
+	captureTableContent();
+    
+    // Force a final log save before submitting
+    if (saveLogsFunction) {
+      saveLogsFunction();
+    }
+    
+    // Set a safety timeout - submit the form after 3 seconds no matter what
+    var safetyTimeout = setTimeout(function() {
+      console.log("Safety timeout triggered - submitting form");
+      document.getElementById("endOfTaskForm").submit();
+    }, 3000);
+    
+    try {
+      // Try to increment the condition counter
+      var incrementPromise = incrementConditionWithPromise(
+        reverse_problem_mapping[chosen_problem], 
+        cond_to_cond_mapping[chosen_condition]
+      );
+      
+      // Normal promise flow
+      incrementPromise.then(function() {
+        // Clear safety timeout since we're submitting normally
+        clearTimeout(safetyTimeout);
+        console.log("Condition counter updated successfully");
+        document.getElementById("endOfTaskForm").submit();
+      }).catch(function(error) {
+        // Clear safety timeout since we're submitting now
+        clearTimeout(safetyTimeout);
+        console.error("Error updating condition counter:", error);
+        document.getElementById("endOfTaskForm").submit();
+      });
+    } catch(e) {
+      // Clear safety timeout since we're submitting now
+      clearTimeout(safetyTimeout);
+      console.error("Exception in submission process:", e);
+      document.getElementById("endOfTaskForm").submit();
+    }
+  } else {
+    console.log("Form validation failed");
+    alert("Please complete all survey questions to submit the task");
+  }
+}
 	
-	
-	
-	if (chosen_condition != "cond_4")
-	{
-		if (!(document.getElementById('helpful_no').checked || document.getElementById('helpful_yes').checked || document.getElementById('helpful_somewhat').checked)) {
-			//alert("helpfulq");
-			//alert("helpful");
-			all_fine = 1;
-		}
-		if (!(document.getElementById('useagain_no').checked || document.getElementById('useagain_yes').checked)) {
-			//alert("useagainq");
-			all_fine = 1;
-		}
-		let a1 = document.getElementById('age_q_30').checked;
-	let b1 = document.getElementById('age_q_45').checked;
-	let c1 = document.getElementById('age_q_60').checked;
-	let d1 = document.getElementById('age_q_plus').checked;
-	if (!(a1||b1||c1||d1))
-		{	//alert("timeq");
-		//alert("age");
-			all_fine = 1;
-		}
-	 a1 = document.getElementById('gender_q_male').checked;
-	 b1 = document.getElementById('gender_q_female').checked;
-	 c1 = document.getElementById('gender_q_other').checked;
-	 d1 = document.getElementById('gender_q_prefer_not_say').checked;
-	if (!(a1||b1||c1||d1))
-		{	//alert("timeq");
-		//alert("gender");
-			all_fine = 1;
-		}	
-		let a = document.getElementById('hardq_veryeasy').checked;
-		let b = document.getElementById('hardq_fairlyeasy').checked;
-		let c = document.getElementById('hardq_moderate').checked;
-		let d = document.getElementById('hardq_fairlyhard').checked;
-		let e = document.getElementById('hardq_veryhard').checked;
-		
-		if (!(a||b||c||d||e))
-		{
-			//alert("hardq");
-			all_fine = 1;
-		}
-		a = document.getElementById('timeq_lotless').checked;
-		b = document.getElementById('timeq_lotmore').checked;
-		c = document.getElementById('timeq_perfect').checked;
-		d = document.getElementById('timeq_bitless').checked;
-		e = document.getElementById('timeq_bitmore').checked;
-		
-		if (!(a||b||c||d||e))
-		{	//alert("timeq");
-			all_fine = 1;
-		}
-		
-		a = document.getElementById('famil_veryfamiliar').checked;
-		b = document.getElementById('famil_notatallfamil').checked;
-		c = document.getElementById('famil_neutral').checked;
-		d = document.getElementById('famil_notsofamil').checked;
-		e = document.getElementById('famil_somewhatfamil').checked;
-		if (!(a||b||c||d||e))
-		{
-			//alert ("familq");
-			all_fine = 1;
-		}
-	}
-	else{
-		let a1 = document.getElementById('age_q_c4_30').checked;
-	let b1 = document.getElementById('age_q_c4_45').checked;
-	let c1 = document.getElementById('age_q_c4_60').checked;
-	let d1 = document.getElementById('age_q_c4_plus').checked;
-	if (!(a1||b1||c1||d1))
-		{	//alert("timeq");
-		//alert("age");
-			all_fine = 1;
-		}
-	 a1 = document.getElementById('gender_q_c4_male').checked;
-	 b1 = document.getElementById('gender_q_c4_female').checked;
-	 c1 = document.getElementById('gender_q_c4_other').checked;
-	 d1 = document.getElementById('gender_q_c4_prefer_not_say').checked;
-	if (!(a1||b1||c1||d1))
-		{	//alert("timeq");
-		//alert("gender");
-			all_fine = 1;
-		}	
-	
-		let a = document.getElementById('famil_veryfamiliar_c4').checked;
-		let b = document.getElementById('famil_notatallfamil_c4').checked;
-		let c = document.getElementById('famil_neutral_c4').checked;
-		let d = document.getElementById('famil_notsofamil_c4').checked;
-		let e = document.getElementById('famil_somewhatfamil_c4').checked;
-		if (!(a||b||c||d||e))
-		{
-			//alert("condition 4,fmail");
-			all_fine = 1;
-		}
-		a = document.getElementById('veryeasy_c4').checked;
-		b = document.getElementById('fairlyeasy_c4').checked;
-		c = document.getElementById('moderate_c4').checked;
-		d = document.getElementById('fairlyhard_c4').checked;
-		e = document.getElementById('veryhard_c4').checked;
-		
-		if (!(a||b||c||d||e))
-		{
-			//alert("condition 4,hardq");
-			all_fine = 1;
-		}
-		a = document.getElementById('lotless_c4').checked;
-		b = document.getElementById('lotmore_c4').checked;
-		c = document.getElementById('perfect_c4').checked;
-		d = document.getElementById('bitless_c4').checked;
-		e = document.getElementById('bitmore_c4').checked;
-		
-		if (!(a||b||c||d||e))
-		{	
-			//alert("condition 4,timeq");
-			all_fine = 1;
-		}
-	
-		
-	
-	}
-	
-	
-	
-	
-	if (all_fine == 0){
-		//try to put the comment submittance here, or try to recreate it
-		incrementCondition(reverse_problem_mapping[chosen_problem], cond_to_cond_mapping[chosen_condition]);
-		document.getElementById("endOfTaskForm").submit();	
-	}
-	else
-	{
-		alert ("Please complete all survey questions to submit the task");
 
-	}
-	}
-	
-
-	function writeToLogger(log){
-		document.getElementById('logger').value += log + '\n'
-	}
+	// Around line 395
+function writeToLogger(log) {
+  try {
+    const logger = document.getElementById('logger');
+    if (logger) {
+      logger.value += log + '\n';
+      console.log("Logger: " + log); // Also log to console for debugging
+    } else {
+      console.error("Logger element not found");
+    }
+  } catch (e) {
+    console.error("Error writing to logger: ", e);
+  }
+}
+	// Around line 400, after writeToLogger
+function ensureAllFieldsArePopulated() {
+  // Make sure the prolific_id is recorded in its form field
+  const prolificIdInput = document.getElementById("prolific_id");
+  const prolificIdValue = prolificIdInput ? prolificIdInput.value : "";
+  
+  // Store the prolific ID in a hidden field specifically for it
+  const prolificIdField = document.getElementById("prolific_exp_num");
+  if (prolificIdField) {
+    prolificIdField.value = prolificIdValue;
+  }
+  
+  // Ensure chosen problem and condition are recorded
+  const loggerField = document.getElementById("logger");
+  if (loggerField) {
+    // Make sure this critical data is at the start of the log
+    const currentLog = loggerField.value;
+    loggerField.value = `Chosen problem: ${chosen_problem}\nChosen condition: ${chosen_condition}\n${currentLog}`;
+  }
+  
+  // Capture current table state as final state if not already captured
+  const currentTimeInSeconds = Math.floor((900 - totalSecondsWithInspiration));
+  logCurrentTableTime(currentTimeInSeconds);
+    captureTableContent();
+  
+  // Make sure all table logs are populated
+  const tableLogTimes = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 
+                        390, 420, 450, 480, 510, 540, 570, 600, 630, 660, 690, 
+                        720, 750, 780, 810, 840, 870, 900];
+  
+  tableLogTimes.forEach(time => {
+    const logElement = document.getElementById(`table_logger_${time}`);
+    if (logElement && (!logElement.value || logElement.value.trim() === "")) {
+      logElement.value = `table_logger_${time} was empty at submission time`;
+      console.log(`[TABLE_STATE_${time}] was empty at submission time`);
+    }
+  });
+}
 	function writeToTableLogger(log, seconds){
 		//alert(log);
 		//alert(seconds);
@@ -764,6 +1121,13 @@ function myTimerInspirationAnswer() {
 	{
 		clearInterval(mtimer);
 		document.getElementById("demo").innerHTML = 'Time\'s  up!';
+		 logCurrentTableTime(900);
+		 captureTableContent();
+    
+    // Force a final log save
+    if (saveLogsFunction) {
+      saveLogsFunction();
+    }
 		submitTask()
 	}
 	else if (totalSecondsWithInspiration<300){
@@ -775,7 +1139,11 @@ function myTimerInspirationAnswer() {
 }
 </script>
 
-<form action="https://docs.google.com/forms/u/0/d/e/1FAIpQLScZtAYVhBm-377FDCohVeuGdYNh7gY9GXXgBEN1wc3Oh5iAZg/formResponse" method="post" id= "endOfTaskForm">
+<!-- In your form tag -->
+<form action="https://docs.google.com/forms/u/0/d/e/1FAIpQLScZtAYVhBm-377FDCohVeuGdYNh7gY9GXXgBEN1wc3Oh5iAZg/formResponse" 
+      method="post" 
+      id="endOfTaskForm" 
+      onsubmit="if(saveLogsFunction) saveLogsFunction();"><form action="https://docs.google.com/forms/u/0/d/e/1FAIpQLScZtAYVhBm-377FDCohVeuGdYNh7gY9GXXgBEN1wc3Oh5iAZg/formResponse" method="post" id= "endOfTaskForm">
 <section class="container" id="Other">
 <!--<section  id="Other">-->
 	<div class="col-xs-12 col-md-12">
