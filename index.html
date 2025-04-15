@@ -99,51 +99,56 @@ function setupLogCapture() {
     error: console.error
   };
   
-  // Create an array to store logs
+  // Create arrays and objects to store logs
   const logs = [];
   const tableStates = {};
   let tableContent = null;
+  let surveyResponses = null;
   
   // Function to save logs to Firebase
   function saveLogsToFirebase() {
-  try {
-    // Get prolific ID
-    const prolificId = document.getElementById('prolific_id')?.value || 'unknown_user';
-    
-    if ((logs.length > 0 || Object.keys(tableStates).length > 0 || tableContent !== null) && prolificId !== 'unknown_user') {
-      // Reference to logs for this specific user
-      const userLogsRef = firebase.database().ref('logs/' + prolificId);
+    try {
+      // Get prolific ID
+      const prolificId = document.getElementById('prolific_id')?.value || 'unknown_user';
       
-      // Create a more structured entry with timestamp as part of the data
-      const timestamp = Date.now();
-      const formattedDate = new Date(timestamp).toISOString()
-        .replace(/[:.]/g, '-')  // Replace colons and dots with hyphens
-        .replace('T', '_');     // Replace T with underscore
-      
-      // Create a more readable session key
-      const sessionKey = `session_${formattedDate}`;
-      
-      // Use set instead of push to use our custom key
-      userLogsRef.child(sessionKey).set({
-        timestamp: timestamp,
-        problem: chosen_problem || 'unknown',
-        condition: chosen_condition || 'unknown',
-        logs: logs,
-        tableStates: tableStates,
-        finalTableContent: tableContent
-      });
-      
-      // Clear the logs array and tableStates object
-      logs.length = 0;
-      Object.keys(tableStates).forEach(key => delete tableStates[key]);
-      tableContent = null;
-      
-      console.log(`Logs saved to Firebase under user ${prolificId}, session key: ${sessionKey}`);
+      if ((logs.length > 0 || Object.keys(tableStates).length > 0 || 
+          tableContent !== null || surveyResponses !== null) && 
+          prolificId !== 'unknown_user') {
+        
+        // Reference to logs for this specific user
+        const userLogsRef = firebase.database().ref('logs/' + prolificId);
+        
+        // Create a more structured entry with timestamp as part of the data
+        const timestamp = Date.now();
+        const formattedDate = new Date(timestamp).toISOString()
+          .replace(/[:.]/g, '-')  // Replace colons and dots with hyphens
+          .replace('T', '_');     // Replace T with underscore
+        
+        // Create a more readable session key
+        const sessionKey = `session_${formattedDate}`;
+        
+        // Use set instead of push to use our custom key
+        userLogsRef.child(sessionKey).set({
+          timestamp: timestamp,
+          problem: chosen_problem || 'unknown',
+          condition: chosen_condition || 'unknown',
+          logs: logs,
+          tableStates: tableStates,
+          finalTableContent: tableContent,
+          surveyResponses: surveyResponses
+        });
+        
+        // Clear the logs array and tableStates object
+        logs.length = 0;
+        Object.keys(tableStates).forEach(key => delete tableStates[key]);
+        // Don't clear table content and survey responses as they're only set once
+        
+        console.log(`Logs saved to Firebase under user ${prolificId}, session key: ${sessionKey}`);
+      }
+    } catch (e) {
+      originalConsole.error('Error saving logs to Firebase:', e);
     }
-  } catch (e) {
-    originalConsole.error('Error saving logs to Firebase:', e);
   }
-}
   
   // Function to save table state
   window.saveTableStateToFirebase = function(timeInSeconds, stateData) {
@@ -154,9 +159,17 @@ function setupLogCapture() {
       saveLogsToFirebase();
     }
   };
+  
+  // Function to save table content
   window.saveTableContentToFirebase = function(content) {
     tableContent = content;
-	// Save logs immediately when table content is captured
+  };
+  
+  // Function to save survey responses
+  window.saveSurveyResponsesToFirebase = function(responses) {
+    surveyResponses = responses;
+    
+    // Save logs immediately when survey responses are captured
     saveLogsToFirebase();
   };
   
@@ -185,7 +198,7 @@ function setupLogCapture() {
     });
     
     // If we have several logs, save them
-    if (logs.length >= 10) {
+    if (logs.length >= 20) {
       saveLogsToFirebase();
     }
   };
@@ -241,16 +254,13 @@ function setupLogCapture() {
   });
   
   document.addEventListener('submit', function() {
-  if (!tableContent) {
-      tableContent = captureTableContent();
-    }
     saveLogsToFirebase();
   });
   
-  // Save logs periodically - every 60 seconds
-  setInterval(saveLogsToFirebase, 60000);
+  // Save logs periodically
+  setInterval(saveLogsToFirebase, 60000); // Every 60 seconds
   
-  // Return the save function
+  // Return the save function in case it's needed elsewhere
   return saveLogsToFirebase;
 }
 
@@ -448,6 +458,180 @@ function weightedRandomSelect(items, weights) {
   // Fallback (should not reach here)
   return 0;
 }
+
+
+function captureSurveyResponses() {
+  try {
+    const surveyResponses = {};
+    
+    // Determine which survey fields to check based on condition
+    if (chosen_condition != "cond_4") {
+      // Capture helpful question
+      if (document.getElementById('helpful_no').checked) {
+        surveyResponses.helpful = "no";
+      } else if (document.getElementById('helpful_yes').checked) {
+        surveyResponses.helpful = "yes";
+      } else if (document.getElementById('helpful_somewhat').checked) {
+        surveyResponses.helpful = "somewhat";
+      }
+      
+      // Capture useagain question
+      if (document.getElementById('useagain_no').checked) {
+        surveyResponses.useAgain = "no";
+      } else if (document.getElementById('useagain_yes').checked) {
+        surveyResponses.useAgain = "yes";
+      }
+      
+      // Capture age question
+      if (document.getElementById('age_q_30').checked) {
+        surveyResponses.age = "18-29";
+      } else if (document.getElementById('age_q_45').checked) {
+        surveyResponses.age = "30-44";
+      } else if (document.getElementById('age_q_60').checked) {
+        surveyResponses.age = "45-59";
+      } else if (document.getElementById('age_q_plus').checked) {
+        surveyResponses.age = "60+";
+      }
+      
+      // Capture gender question
+      if (document.getElementById('gender_q_male').checked) {
+        surveyResponses.gender = "Male";
+      } else if (document.getElementById('gender_q_female').checked) {
+        surveyResponses.gender = "Female";
+      } else if (document.getElementById('gender_q_other').checked) {
+        surveyResponses.gender = "Other";
+      } else if (document.getElementById('gender_q_prefer_not_say').checked) {
+        surveyResponses.gender = "Prefer not to say";
+      }
+      
+      // Capture difficulty question
+      if (document.getElementById('hardq_veryeasy').checked) {
+        surveyResponses.difficulty = "Very easy";
+      } else if (document.getElementById('hardq_fairlyeasy').checked) {
+        surveyResponses.difficulty = "Fairly easy";
+      } else if (document.getElementById('hardq_moderate').checked) {
+        surveyResponses.difficulty = "Moderate";
+      } else if (document.getElementById('hardq_fairlyhard').checked) {
+        surveyResponses.difficulty = "Fairly hard";
+      } else if (document.getElementById('hardq_veryhard').checked) {
+        surveyResponses.difficulty = "Very hard";
+      }
+      
+      // Capture time question
+      if (document.getElementById('timeq_lotless').checked) {
+        surveyResponses.timeRating = "Had a lot more time than needed";
+      } else if (document.getElementById('timeq_lotmore').checked) {
+        surveyResponses.timeRating = "Needed a lot more time";
+      } else if (document.getElementById('timeq_perfect').checked) {
+        surveyResponses.timeRating = "Didn't need more time";
+      } else if (document.getElementById('timeq_bitless').checked) {
+        surveyResponses.timeRating = "Had a bit more time than needed";
+      } else if (document.getElementById('timeq_bitmore').checked) {
+        surveyResponses.timeRating = "Needed a bit more time";
+      }
+      
+      // Capture familiarity question
+      if (document.getElementById('famil_veryfamiliar').checked) {
+        surveyResponses.familiarity = "Very familiar";
+      } else if (document.getElementById('famil_somewhatfamil').checked) {
+        surveyResponses.familiarity = "Somewhat familiar";
+      } else if (document.getElementById('famil_neutral').checked) {
+        surveyResponses.familiarity = "Neutral";
+      } else if (document.getElementById('famil_notsofamil').checked) {
+        surveyResponses.familiarity = "Not so familiar";
+      } else if (document.getElementById('famil_notatallfamil').checked) {
+        surveyResponses.familiarity = "Not familiar at all";
+      }
+      
+      // Capture comments
+      const comments = document.getElementById('textcomments')?.value;
+      if (comments && comments.trim() !== " ") {
+        surveyResponses.comments = comments;
+      }
+    } else {
+      // Condition 4 survey fields
+      // Capture age question
+      if (document.getElementById('age_q_c4_30').checked) {
+        surveyResponses.age = "18-29";
+      } else if (document.getElementById('age_q_c4_45').checked) {
+        surveyResponses.age = "30-44";
+      } else if (document.getElementById('age_q_c4_60').checked) {
+        surveyResponses.age = "45-59";
+      } else if (document.getElementById('age_q_c4_plus').checked) {
+        surveyResponses.age = "60+";
+      }
+      
+      // Capture gender question
+      if (document.getElementById('gender_q_c4_male').checked) {
+        surveyResponses.gender = "Male";
+      } else if (document.getElementById('gender_q_c4_female').checked) {
+        surveyResponses.gender = "Female";
+      } else if (document.getElementById('gender_q_c4_other').checked) {
+        surveyResponses.gender = "Other";
+      } else if (document.getElementById('gender_q_c4_prefer_not_say').checked) {
+        surveyResponses.gender = "Prefer not to say";
+      }
+      
+      // Capture familiarity question
+      if (document.getElementById('famil_veryfamiliar_c4').checked) {
+        surveyResponses.familiarity = "Very familiar";
+      } else if (document.getElementById('famil_somewhatfamil_c4').checked) {
+        surveyResponses.familiarity = "Somewhat familiar";
+      } else if (document.getElementById('famil_neutral_c4').checked) {
+        surveyResponses.familiarity = "Neutral";
+      } else if (document.getElementById('famil_notsofamil_c4').checked) {
+        surveyResponses.familiarity = "Not so familiar";
+      } else if (document.getElementById('famil_notatallfamil_c4').checked) {
+        surveyResponses.familiarity = "Not familiar at all";
+      }
+      
+      // Capture difficulty question
+      if (document.getElementById('veryeasy_c4').checked) {
+        surveyResponses.difficulty = "Very easy";
+      } else if (document.getElementById('fairlyeasy_c4').checked) {
+        surveyResponses.difficulty = "Fairly easy";
+      } else if (document.getElementById('moderate_c4').checked) {
+        surveyResponses.difficulty = "Moderate";
+      } else if (document.getElementById('fairlyhard_c4').checked) {
+        surveyResponses.difficulty = "Fairly hard";
+      } else if (document.getElementById('veryhard_c4').checked) {
+        surveyResponses.difficulty = "Very hard";
+      }
+      
+      // Capture time question
+      if (document.getElementById('lotless_c4').checked) {
+        surveyResponses.timeRating = "Had a lot more time than needed";
+      } else if (document.getElementById('lotmore_c4').checked) {
+        surveyResponses.timeRating = "Needed a lot more time";
+      } else if (document.getElementById('perfect_c4').checked) {
+        surveyResponses.timeRating = "Didn't need more time";
+      } else if (document.getElementById('bitless_c4').checked) {
+        surveyResponses.timeRating = "Had a bit more time than needed";
+      } else if (document.getElementById('bitmore_c4').checked) {
+        surveyResponses.timeRating = "Needed a bit more time";
+      }
+      
+      // Capture comments
+      const comments = document.getElementById('textcomments_c4')?.value;
+      if (comments && comments.trim() !== " ") {
+        surveyResponses.comments = comments;
+      }
+    }
+    
+    console.log("[SURVEY_RESPONSES] Survey responses captured");
+    
+    // Save to Firebase if the function exists
+    if (typeof saveSurveyResponsesToFirebase === 'function') {
+      saveSurveyResponsesToFirebase(surveyResponses);
+    }
+    
+    return surveyResponses;
+  } catch (e) {
+    console.error("Error capturing survey responses:", e);
+    return null;
+  }
+}
+
 
 async function sample_condition_problem() {
   let values = await get_possible_conditions_and_problems();
@@ -825,6 +1009,7 @@ function logCurrentTime(section_name){
     // Ensure all fields are populated first
     ensureAllFieldsArePopulated();
 	captureTableContent();
+	captureSurveyResponses();
     
     // Force a final log save before submitting
     if (saveLogsFunction) {
